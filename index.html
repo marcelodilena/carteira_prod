@@ -187,80 +187,45 @@
         .sub-tab {
             text-decoration: none;
             color: var(--text-2);
-            font-size: 0.78rem;
             font-weight: 500;
+            font-size: 0.8rem;
             padding: 5px 12px;
-            border-radius: 5px;
+            border-radius: 4px;
             transition: all 0.15s;
             cursor: pointer;
             border: 1px solid transparent;
-            display: flex; align-items: center; gap: 5px;
-            white-space: nowrap;
         }
         .sub-tab:hover { background: var(--surface-2); color: var(--text-1); }
-        .sub-tab.active {
-            background: var(--accent-dim);
-            color: var(--accent);
-            border-color: rgba(233,115,50,0.25);
-        }
+        .sub-tab.active { background: var(--surface-3); color: #fff; border-color: var(--border-light); }
         .hidden-initially { display: none !important; }
 
         /* --- CONTEÚDO PRINCIPAL --- */
         .main-container {
-            flex: 1;
             display: flex;
             flex-direction: column;
+            flex: 1;
+            height: calc(100vh - var(--header-h) - var(--submenu-h));
             overflow: hidden;
-            height: calc(100vh - var(--header-h) - var(--submenu-h) - var(--statusbar-h));
+            background: radial-gradient(circle at top, #131722 0%, var(--bg) 100%);
         }
         .content {
             flex: 1;
-            padding: 1rem 1.25rem;
+            padding: 1.5rem;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            width: 100%;
         }
 
-        /* --- TELA DE STATUS (LOADING) --- */
+        /* --- ESTADOS VAZIOS --- */
         .status-msg {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: var(--text-3);
-            text-align: center;
-            gap: 1rem;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%; text-align: center;
+            background: var(--surface-1); border: 1px dashed var(--border-light); border-radius: 12px;
         }
-        .status-spinner-ring {
-            width: 44px; height: 44px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        .status-msg h3 { font-size: 1.05rem; font-weight: 600; color: var(--text-2); }
-        .status-msg p { font-size: 0.82rem; color: var(--text-3); max-width: 340px; line-height: 1.6; }
-
-        /* --- SEÇÃO TÍTULO --- */
-        .section-header {
-            display: flex; align-items: center; gap: 10px;
-            margin-bottom: 0.9rem;
-            flex-shrink: 0;
-        }
-        .section-header-line {
-            width: 3px; height: 18px;
-            background: linear-gradient(to bottom, var(--accent), transparent);
-            border-radius: 2px;
-            flex-shrink: 0;
-        }
-        .section-header h3 {
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: var(--text-2);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        .status-msg svg { width: 48px; height: 48px; opacity: 0.2; margin-bottom: 1rem; fill: var(--text-1); }
+        .status-msg h3 { font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--text-1); font-weight: 600; }
+        .status-msg p { color: var(--text-2); font-size: 0.9rem; max-width: 400px; line-height: 1.5; }
 
         /* --- CARDS DE STATUS --- */
         .cards-grid-6 {
@@ -279,89 +244,43 @@
             flex-direction: column;
             gap: 0.5rem;
             cursor: pointer;
-            transition: all 0.18s;
+            transition: all 0.2s;
             position: relative;
             overflow: hidden;
         }
         .status-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 2px;
-            background: var(--card-color, #3b82f6);
-            opacity: 0.7;
+            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--text-3); transition: width 0.2s;
         }
-        .status-card:hover {
-            border-color: var(--card-color, #3b82f6);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-        }
-        .status-card.selected {
-            border-color: var(--card-color, #3b82f6);
-            background: var(--surface-3);
-            box-shadow: 0 0 0 1px var(--card-color, #3b82f6), 0 4px 20px rgba(0,0,0,0.4);
-        }
-        .card-icon {
-            width: 28px; height: 28px;
-            border-radius: 6px;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(255,255,255,0.06);
-            flex-shrink: 0;
-        }
-        .card-icon svg { width: 14px; height: 14px; }
-        .card-meta { display: flex; flex-direction: column; gap: 1px; }
-        .card-title { font-size: 0.68rem; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; }
-        .card-value { font-size: 1.6rem; font-weight: 700; color: var(--text-1); line-height: 1; font-variant-numeric: tabular-nums; }
+        .status-card:hover { transform: translateY(-2px); border-color: var(--border-light); }
+        .status-card.selected { background: var(--surface-3); border-color: rgba(255,255,255,0.1); }
+        .status-card.selected::before { width: 100%; opacity: 0.08; }
 
-        .status-card.total     { --card-color: #3b82f6; }
-        .status-card.liberadas { --card-color: #06b6d4; }
-        .status-card.processo  { --card-color: #f59e0b; }
-        .status-card.finalizadas { --card-color: #8b5cf6; }
-        .status-card.expedidos { --card-color: #64748b; }
-        .status-card.atrasos   { --card-color: #ef4444; }
-        .status-card.proximas  { --card-color: #10b981; }
+        .status-card.total::before { background: var(--c-total); }
+        .status-card.liberadas::before { background: var(--c-liberadas); }
+        .status-card.processo::before { background: var(--c-processo); }
+        .status-card.finalizadas::before { background: var(--c-finalizadas); }
+        .status-card.expedidos::before { background: var(--c-expedidos); }
+        .status-card.atrasos::before { background: var(--c-atrasos); }
+        .status-card.proximas::before { background: var(--c-proximas); }
 
-        /* --- TABELA --- */
+        .card-title { font-size: 0.72rem; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.5px; z-index: 1; }
+        .card-value { font-size: 1.6rem; font-weight: 700; color: var(--text-1); z-index: 1; line-height: 1; }
+
+        /* --- TABELAS --- */
         .table-card {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
+            flex: 1; display: flex; flex-direction: column;
             background: var(--surface-1);
-            border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 8px; border: 1px solid var(--border);
             overflow: hidden;
         }
         .table-title-area {
-            padding: 0.7rem 1rem;
+            padding: 0.8rem 1rem;
             background: var(--surface-2);
             border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-shrink: 0;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .table-title-text {
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--text-2);
-            display: flex; align-items: center; gap: 8px;
-        }
-        .table-title-text::before {
-            content: '';
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: var(--accent);
-            display: inline-block;
-        }
-        .table-record-count {
-            font-size: 0.72rem;
-            color: var(--text-3);
-            background: var(--surface-3);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            padding: 2px 8px;
-            font-variant-numeric: tabular-nums;
-        }
+        .table-title-text { font-weight: 600; color: var(--text-1); font-size: 0.85rem; display: flex; align-items: center; gap: 8px; }
+        .table-title-text::before { content:''; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--accent); }
 
         .table-wrapper { flex: 1; overflow: auto; }
         .table-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -371,241 +290,242 @@
 
         .data-table { width: 100%; border-collapse: collapse; text-align: left; }
         .data-table thead { position: sticky; top: 0; z-index: 10; }
-        .data-table thead th {
-            background: var(--surface-2);
-            color: var(--text-3);
-            padding: 0.6rem 0.85rem;
-            font-weight: 600;
+        
+        .data-table th {
+            background: var(--surface-3); color: var(--text-2);
+            padding: 0.6rem 0.8rem; font-weight: 600;
             border-bottom: 1px solid var(--border);
-            text-transform: uppercase;
-            font-size: 0.65rem;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-            border-right: 1px solid var(--border);
+            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;
+            white-space: nowrap; box-shadow: 0 1px 0 var(--border-light) inset;
         }
-        .data-table thead th:last-child { border-right: none; }
+
         .filter-row td {
-            padding: 0.35rem 0.4rem;
-            background: var(--surface-1);
-            border-bottom: 1px solid var(--border);
+            padding: 0.3rem 0.4rem; background: var(--surface-2); border-bottom: 1px solid var(--border);
         }
+
         .data-table td {
-            padding: 0.6rem 0.85rem;
-            border-bottom: 1px solid rgba(42,51,72,0.6);
-            color: var(--text-1);
-            font-size: 0.78rem;
-            border-right: 1px solid rgba(42,51,72,0.4);
+            padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--border);
+            color: var(--text-1); font-size: 0.75rem; white-space: nowrap;
         }
-        .data-table td:last-child { border-right: none; }
-        .data-table tr:hover td { background: var(--surface-2); }
-        .data-table tr:nth-child(even) td { background: rgba(30,37,53,0.4); }
-        .data-table tr:nth-child(even):hover td { background: var(--surface-2); }
+        
+        .data-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+        .data-table tbody tr:nth-child(even) { background: rgba(0,0,0,0.15); }
 
-        .data-table tfoot { position: sticky; bottom: 0; z-index: 10; }
+        .data-table tfoot { position: sticky; bottom: -1px; z-index: 10; }
         .data-table tfoot td {
-            background: var(--surface-2);
-            border-top: 1px solid var(--border);
-            color: var(--text-2);
-            font-size: 0.75rem;
-            font-weight: 600;
-            border-bottom: none;
+            background: var(--surface-3); padding: 0.8rem 1rem; color: #fff; font-size: 0.8rem;
+            border-top: 1px solid var(--border); font-weight: 600;
         }
 
+        /* Campos de Filtro Tabela */
         .table-filter-input, .table-filter-select {
-            width: 100%; padding: 0.32rem 0.4rem;
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 0.7rem;
-            color: var(--text-1);
-            outline: none;
-            transition: border-color 0.15s;
+            width: 100%; padding: 4px;
+            background: var(--surface-1); border: 1px solid var(--border); border-radius: 4px;
+            color: var(--text-1); font-size: 0.7rem; outline: none; transition: border 0.2s;
         }
-        .table-filter-select option { background: var(--surface-2); }
-        .table-filter-input:focus,
-        .table-filter-select:focus { border-color: var(--accent); }
-        .table-filter-select { cursor: pointer; }
+        .table-filter-input:focus, .table-filter-select:focus { border-color: var(--accent); }
+        .table-filter-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b95a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 4px center; background-size: 12px; padding-right: 20px; }
+        .table-filter-select option { background: var(--surface-2); color: var(--text-1); }
 
-        /* --- BADGES E ÍCONES --- */
-        .btn-obs-trigger {
-            background: var(--surface-3);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            padding: 2px 5px;
-            transition: all 0.15s;
-        }
-        .btn-obs-trigger:hover { transform: scale(1.15); border-color: var(--accent); }
-
-        .bola-vermelha-alerta { margin-right: 5px; font-size: 0.75rem; vertical-align: middle; animation: pulse-alerta 2s infinite; }
-        .bola-amarela-alerta  { margin-right: 5px; font-size: 0.75rem; vertical-align: middle; }
-        @keyframes pulse-alerta { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.5; } }
+        /* Icones e Badges Tabela */
+        .btn-obs-trigger { background: var(--surface-3); border: 1px solid var(--border-light); color: var(--text-1); font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-obs-trigger:hover { background: var(--border-light); border-color: var(--text-3); }
+        
+        .alerta-bolinha { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .alerta-bolinha.red { background: var(--c-atrasos); box-shadow: 0 0 6px var(--c-atrasos); }
+        .alerta-bolinha.yellow { background: var(--c-processo); box-shadow: 0 0 6px var(--c-processo); }
 
         .badge-etapa {
-            display: inline-block; padding: 2px 8px; border-radius: 4px;
-            font-size: 0.68rem; font-weight: 600; text-align: center;
-            min-width: 50px; user-select: none; letter-spacing: 0.3px;
+            display: inline-block; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 0.65rem; text-align: center; min-width: 55px; letter-spacing: 0.5px;
         }
-        .badge-etapa.ok       { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
-        .badge-etapa.andam    { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
-        .badge-etapa.ag       { background: var(--surface-3); color: var(--text-3); border: 1px solid var(--border); }
-        .badge-etapa.vazio    { background: transparent; color: var(--text-3); border: none; font-weight: 400; }
+        .centralized-status { text-align: center !important; }
+        
+        .badge-etapa.ok { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+        .badge-etapa.andam { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+        .badge-etapa.ag { background: rgba(255,255,255,0.05); color: var(--text-2); border: 1px solid var(--border); }
+        .badge-etapa.vazio { background: transparent; color: var(--text-3); font-weight: 400; border: none; }
 
-        .badge-status-usinagem {
-            display: inline-block; padding: 2px 8px; border-radius: 4px;
-            font-size: 0.68rem; font-weight: 600;
-            background: rgba(59,130,246,0.12);
-            color: #60a5fa;
-            border: 1px solid rgba(59,130,246,0.25);
-            white-space: nowrap;
-        }
-
-        .centralized-status { text-align: center; vertical-align: middle; }
-        .centralized-status div { display: inline-block; }
+        .badge-usinagem { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); padding: 3px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: 600; white-space: nowrap; display: inline-block;}
 
         /* --- MODAL --- */
-        .modal-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.65);
-            backdrop-filter: blur(4px);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.2s;
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(3px); display: flex; justify-content: center; align-items: center; z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .modal-box {
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            width: 90%; max-width: 460px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            transform: translateY(-20px) scale(0.97);
-            transition: transform 0.2s;
-            overflow: hidden;
-        }
-        .modal-overlay.active .modal-box { transform: translateY(0) scale(1); }
-        .modal-header {
-            padding: 1rem 1.2rem;
-            background: var(--surface-3);
-            border-bottom: 1px solid var(--border);
-            font-size: 0.85rem; font-weight: 700; color: var(--text-1);
-            display: flex; align-items: center; gap: 8px;
-        }
-        .modal-header svg { width: 15px; height: 15px; color: var(--accent); }
-        .modal-body { padding: 1.2rem; font-size: 0.85rem; color: var(--text-2); line-height: 1.6; white-space: pre-wrap; }
-        .modal-footer { padding: 0.75rem 1.2rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
-        .btn-modal-close {
-            background: var(--accent); color: #fff; border: none;
-            padding: 6px 16px; border-radius: 6px; cursor: pointer;
-            font-size: 0.78rem; font-weight: 600; transition: opacity 0.15s;
-        }
-        .btn-modal-close:hover { opacity: 0.85; }
+        .modal-box { background: var(--surface-1); border: 1px solid var(--border); padding: 1.5rem; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(-20px); transition: transform 0.2s; }
+        .modal-overlay.active .modal-box { transform: translateY(0); }
+        .modal-header { font-weight: 600; font-size: 1rem; color: #fff; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem; display: flex; align-items: center; gap: 8px;}
+        .modal-body { font-size: 0.85rem; color: var(--text-1); line-height: 1.5; margin-bottom: 1.5rem; white-space: pre-wrap; background: var(--surface-2); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-light); }
+        .btn-modal-close { background: var(--surface-3); color: #fff; border: 1px solid var(--border-light); padding: 0.4rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.8rem; float: right; transition: background 0.2s; }
+        .btn-modal-close:hover { background: var(--border); }
 
         /* --- TOAST --- */
-        .toast {
-            position: fixed; top: 16px; right: 16px;
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            color: var(--text-1);
-            padding: 0.7rem 1.2rem;
-            border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-            display: flex; align-items: center; gap: 10px;
-            transform: translateY(-80px); opacity: 0;
-            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-            z-index: 9999; font-size: 0.82rem; font-weight: 500;
-            border-left: 3px solid #10b981;
-        }
-        .toast.show { transform: translateY(0); opacity: 1; }
-        .toast.error { border-left-color: #ef4444; }
+        .toast { position: fixed; top: 20px; right: 20px; background: var(--surface-2); border: 1px solid var(--border-light); color: var(--text-1); padding: 0.8rem 1.2rem; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 10px; transform: translateX(120%); opacity: 0; transition: all 0.4s cubic-bezier(0.68,-0.55,0.27,1.55); z-index: 3000; font-size: 0.85rem; font-weight: 500; }
+        .toast.show { transform: translateX(0); opacity: 1; }
+        .toast-icon { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(16,185,129,0.2); color: #10b981; font-weight: bold; }
+        .toast.error .toast-icon { background: rgba(239,68,68,0.2); color: #ef4444; }
 
-        /* --- BARRA DE STATUS INFERIOR --- */
-        .statusbar {
-            height: var(--statusbar-h);
-            background: var(--surface-1);
-            border-top: 1px solid var(--border);
-            display: flex; align-items: center;
-            padding: 0 1.5rem;
-            gap: 1.5rem;
-            flex-shrink: 0;
+        /* =======================================================
+           🚀 RESPONSIVIDADE (MOBILE / TABLET)
+           ======================================================= */
+        @media (max-width: 1024px) {
+            .header-right { flex-wrap: wrap; justify-content: flex-end; }
+            .clock-display { display: none; } /* Esconde relógio em tablets/mobile para ganhar espaço */
         }
-        .statusbar-item {
-            font-size: 0.67rem; color: var(--text-3);
-            display: flex; align-items: center; gap: 5px;
+
+        @media (max-width: 768px) {
+            :root {
+                --header-h: auto; /* Deixa o header crescer */
+                --submenu-h: auto;
+            }
+
+            body {
+                overflow-y: auto; /* Permite rolagem total no mobile */
+                height: auto;
+            }
+
+            .main-container {
+                height: auto;
+                overflow: visible;
+            }
+
+            .content {
+                padding: 1rem 0.5rem;
+                overflow: visible;
+            }
+
+            /* Header Principal quebrando em linhas */
+            .navbar {
+                flex-direction: column;
+                align-items: center;
+                padding: 1rem;
+                gap: 1rem;
+            }
+            .logo-wrap { width: 100%; justify-content: center; }
+            .nav-sep { display: none; }
+            
+            .main-tabs {
+                width: 100%;
+                overflow-x: auto; /* Rolagem horizontal nas abas principais */
+                padding-bottom: 5px;
+                justify-content: flex-start;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .header-right {
+                width: 100%;
+                justify-content: space-between;
+                flex-wrap: nowrap;
+            }
+
+            /* Submenus rolagem horizontal */
+            .sub-navigation-strip {
+                padding: 0.5rem;
+            }
+            .sub-tabs-group {
+                overflow-x: auto;
+                padding-bottom: 5px;
+                -webkit-overflow-scrolling: touch;
+            }
+            .sub-tab { white-space: nowrap; }
+
+            /* Cards em 2 colunas no celular ou scroll horizontal */
+            .cards-grid-6 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            /* A tabela: o calcanhar de Aquiles do mobile */
+            .table-card {
+                margin: 0;
+                border-radius: 4px;
+                border: none;
+                border-top: 1px solid var(--border);
+            }
+            
+            .table-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch; /* Suavidade no iOS */
+            }
+
+            /* Diminuir um pouco as fontes da tabela para caber mais */
+            .data-table th, .data-table td {
+                padding: 0.5rem;
+                font-size: 0.75rem;
+            }
+
+            .data-table tfoot td {
+                font-size: 0.75rem;
+            }
         }
-        .statusbar-item svg { width: 10px; height: 10px; opacity: 0.5; }
-        .statusbar-version { margin-left: auto; }
+
+        @media (max-width: 480px) {
+            .cards-grid-6 {
+                grid-template-columns: 1fr; /* Um card por linha em telas muito finas */
+            }
+        }
+
     </style>
 </head>
 <body>
 
-    <!-- TOAST -->
     <div id="toast" class="toast">
-        <span id="toast-icon">✓</span>
-        <span id="toast-msg">Dados sincronizados!</span>
+        <div id="toast-icon" class="toast-icon">✓</div>
+        <div id="toast-msg">Matriz sincronizada</div>
     </div>
 
-    <!-- MODAL DE OBSERVAÇÕES -->
     <div id="modal-observacao" class="modal-overlay" onclick="fecharModalObservacao(event)">
         <div class="modal-box">
             <div class="modal-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 Observação do Item
             </div>
             <div id="modal-conteudo-texto" class="modal-body">Nenhuma nota inserida.</div>
-            <div class="modal-footer">
-                <button class="btn-modal-close" onclick="document.getElementById('modal-observacao').classList.remove('active')">Fechar</button>
-            </div>
+            <div><button class="btn-modal-close" onclick="document.getElementById('modal-observacao').classList.remove('active')">Fechar</button></div>
         </div>
     </div>
 
-    <!-- HEADER -->
     <header class="navbar">
-        <a class="logo-wrap" href="#">
+        <a href="#" class="logo-wrap" onclick="location.reload()">
             <div class="logo-icon">
                 <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
             </div>
             <div>
                 <div class="logo-text">MORENO <span>FUNDIÇÃO</span></div>
-                <span class="logo-badge">MFD Sistema v2.0</span>
+                <div class="logo-badge">Sistema Dashboard</div>
             </div>
         </a>
-
+        
         <div class="nav-sep"></div>
 
         <div class="main-tabs">
             <div class="main-tab active" onclick="switchMainTab('acucar', this, 'Açúcar e Álcool')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 Açúcar e Álcool
             </div>
             <div class="main-tab" onclick="switchMainTab('engenharia', this, 'Engenharia')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M20 12h2M2 12h2M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 Engenharia
             </div>
             <div class="main-tab" onclick="switchMainTab('vendas', this, 'Vendas Industriais')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                 Vendas Industriais
             </div>
         </div>
 
         <div class="header-right">
-            <div class="clock-display">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                <span id="clock-time">--:--:--</span>
+            <div class="server-status" title="Status da Aplicação">
+                <div class="status-dot online"></div> Online
             </div>
-            <div class="server-status">
-                <div id="status-dot" class="status-dot"></div>
-                <span id="server-label">Aguardando</span>
+            <div class="clock-display" id="clock">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>--:--</span>
             </div>
             <button onclick="carregarPlanilhaDoServidor()" class="btn-sync" id="btn-sync">
                 <div id="sync-spinner" class="spinner"></div>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="sync-icon"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
-                Sincronizar
+                <svg id="sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.92-10.26l5.08 5.08"/></svg>
+                <span id="sync-txt">Sincronizar</span>
             </button>
         </div>
     </header>
 
-    <!-- SUBMENU -->
     <div id="sub-navigation-strip" class="sub-navigation-strip hidden-initially">
         <ul id="sub-acucar" class="sub-tabs-group active">
             <li><a class="sub-tab menu-item" data-tipo="CARTEIRA GERAL">Carteira Geral</a></li>
@@ -615,610 +535,309 @@
             <li><a class="sub-tab menu-item" data-tipo="CAMISAS NOVAS">Camisas Novas</a></li>
             <li><a class="sub-tab menu-item" data-tipo="PERIFÉRICOS">Periféricos</a></li>
         </ul>
-        <ul id="sub-engenharia" class="sub-tabs-group">
-            <li><span class="sub-tab" style="color:var(--text-3); cursor:not-allowed;">Módulos de Engenharia (Em Breve)</span></li>
-        </ul>
-        <ul id="sub-vendas" class="sub-tabs-group">
-            <li><span class="sub-tab" style="color:var(--text-3); cursor:not-allowed;">Módulos de Vendas (Em Breve)</span></li>
-        </ul>
+        <ul id="sub-engenharia" class="sub-tabs-group"><li><span class="sub-tab" style="color:var(--text-3); cursor:not-allowed;">Módulos (Em Breve)</span></li></ul>
+        <ul id="sub-vendas" class="sub-tabs-group"><li><span class="sub-tab" style="color:var(--text-3); cursor:not-allowed;">Módulos (Em Breve)</span></li></ul>
     </div>
 
-    <!-- CONTEÚDO -->
     <div class="main-container">
         <main class="content">
             <div id="status-screen" class="status-msg">
-                <div class="status-spinner-ring"></div>
-                <h3 id="status-title">Conectando ao servidor...</h3>
-                <p id="status-desc">Baixando matriz de dados. Aguarde um momento.</p>
+                <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                <h3 id="status-title">Conectando à Base de Dados</h3>
+                <p id="status-desc">A procurar pelo ficheiro principal (dados.xlsx) no servidor para inicializar o dashboard.</p>
             </div>
-            <div id="custom-dashboard-area" style="display:flex; flex-direction:column; height:100%; overflow:hidden;"></div>
+            <div id="custom-dashboard-area" style="display:flex; flex-direction:column; height: 100%;"></div>
         </main>
     </div>
 
-    <!-- STATUS BAR INFERIOR -->
-    <div class="statusbar">
-        <div class="statusbar-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Operador: Sistema
-        </div>
-        <div class="statusbar-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            <span id="statusbar-modulo">Nenhum módulo ativo</span>
-        </div>
-        <div class="statusbar-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-            Origem: <span id="statusbar-fonte">dados.xlsx</span>
-        </div>
-        <div class="statusbar-item statusbar-version">MFD Sistema · Fundição Moreno © 2025</div>
-    </div>
-
     <script>
-        const NOME_DO_ARQUIVO_EXCEL = './dados.xlsx';
-
-        let abasPlanilha = {};
-        let listaOriginalVálida = [];
-        let filtroCardAtivo = 'total';
-        let nomeAbaAtiva = '';
-
-        // --- RELÓGIO ---
-        function atualizarRelogio() {
+        // Relógio
+        setInterval(() => {
             const now = new Date();
-            const h = String(now.getHours()).padStart(2,'0');
-            const m = String(now.getMinutes()).padStart(2,'0');
-            const s = String(now.getSeconds()).padStart(2,'0');
-            document.getElementById('clock-time').textContent = `${h}:${m}:${s}`;
-        }
-        atualizarRelogio();
-        setInterval(atualizarRelogio, 1000);
+            document.querySelector('#clock span').textContent = now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+        }, 1000);
 
-        // --- CARREGAR DADOS ---
+        const NOME_DO_ARQUIVO_EXCEL = './dados.xlsx'; 
+        let abasPlanilha = {}, listaOriginalVálida = [], filtroCardAtivo = 'total', nomeAbaAtiva = '';
+
         async function carregarPlanilhaDoServidor() {
-            const btnSync    = document.getElementById('btn-sync');
-            const spinner    = document.getElementById('sync-spinner');
-            const syncIcon   = document.getElementById('sync-icon');
-            const statusDot  = document.getElementById('status-dot');
-            const serverLbl  = document.getElementById('server-label');
+            const btn = document.getElementById('btn-sync');
+            const spinner = document.getElementById('sync-spinner');
+            const icon = document.getElementById('sync-icon');
+            const txt = document.getElementById('sync-txt');
+            const statusTitle = document.getElementById('status-title');
+            const statusDesc = document.getElementById('status-desc');
             const statusScreen = document.getElementById('status-screen');
 
-            btnSync.disabled = true;
-            spinner.style.display = 'inline-block';
-            syncIcon.style.display = 'none';
-            statusDot.className = 'status-dot';
-            serverLbl.textContent = 'Sincronizando...';
+            btn.disabled = true; spinner.style.display = 'block'; icon.style.display = 'none'; txt.innerText = 'Lendo...';
             document.getElementById('custom-dashboard-area').innerHTML = '';
             statusScreen.style.display = 'flex';
-            document.getElementById('status-title').textContent = 'Sincronizando banco de dados...';
-            document.getElementById('status-title').style.color = '';
-            document.getElementById('status-desc').textContent = 'Lendo a planilha dados.xlsx no servidor...';
+            statusTitle.innerText = "Processando Matriz..."; statusTitle.style.color = "var(--text-1)";
+            statusDesc.innerText = "Efetuando o download seguro de dados.xlsx.";
 
             try {
-                const response = await fetch(NOME_DO_ARQUIVO_EXCEL + '?v=' + Date.now());
-                if (!response.ok) throw new Error(`Arquivo não encontrado (HTTP ${response.status})`);
-
+                const response = await fetch(NOME_DO_ARQUIVO_EXCEL + '?v=' + new Date().getTime());
+                if (!response.ok) throw new Error(`Arquivo não encontrado (Erro ${response.status})`);
+                
                 const arrayBuffer = await response.arrayBuffer();
                 const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
+                
                 abasPlanilha = {};
-                workbook.SheetNames.forEach(name => {
-                    abasPlanilha[normalizarTextoParaFiltro(name)] = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: "" });
+                workbook.SheetNames.forEach(sheetName => {
+                    abasPlanilha[normalizarTextoParaFiltro(sheetName)] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
                 });
-
+                
                 document.getElementById('sub-navigation-strip').classList.remove('hidden-initially');
-                statusDot.className = 'status-dot online';
-                serverLbl.textContent = 'Online';
-                mostrarToast("Dados sincronizados com sucesso!", false);
-
+                mostrarToast("Dados sincronizados com sucesso!");
+                
                 const linkCarteiraGeral = document.querySelector('[data-tipo="CARTEIRA GERAL"]');
                 if (linkCarteiraGeral) linkCarteiraGeral.click();
 
             } catch (error) {
-                statusDot.className = 'status-dot error';
-                serverLbl.textContent = 'Erro';
-                document.getElementById('status-title').textContent = 'Erro ao carregar os dados';
-                document.getElementById('status-title').style.color = '#ef4444';
-                document.getElementById('status-desc').innerHTML =
-                    `Não foi possível acessar <b>${NOME_DO_ARQUIVO_EXCEL}</b>.<br><br>
-                     Verifique se o arquivo foi enviado corretamente ao servidor.<br><br>
-                     <small style="color:var(--text-3)">${error.message}</small>`;
-                mostrarToast("Erro na sincronização", true);
+                statusTitle.innerText = "Falha na Sincronização"; statusTitle.style.color = "var(--c-atrasos)";
+                statusDesc.innerHTML = `Impossível aceder a <b>${NOME_DO_ARQUIVO_EXCEL}</b>.<br><br>Detalhe: ${error.message}`;
+                mostrarToast("Erro ao ler dados.xlsx", true);
             } finally {
-                btnSync.disabled = false;
-                spinner.style.display = 'none';
-                syncIcon.style.display = '';
+                btn.disabled = false; spinner.style.display = 'none'; icon.style.display = 'block'; txt.innerText = 'Sincronizar';
             }
         }
 
         window.addEventListener('DOMContentLoaded', carregarPlanilhaDoServidor);
 
-        // --- TABS ---
         function switchMainTab(tabId, element, nomeDepartamento) {
-            document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.main-tab').forEach(tab => tab.classList.remove('active'));
             element.classList.add('active');
-            document.querySelectorAll('.sub-tabs-group').forEach(g => g.classList.remove('active'));
+            document.querySelectorAll('.sub-tabs-group').forEach(group => group.classList.remove('active'));
             document.getElementById('sub-' + tabId).classList.add('active');
-            document.querySelectorAll('.sub-tab').forEach(s => s.classList.remove('active'));
-            document.getElementById('custom-dashboard-area').innerHTML = '';
+            document.querySelectorAll('.sub-tab').forEach(sub => sub.classList.remove('active'));
+            document.getElementById('custom-dashboard-area').innerHTML = "";
             const telaStatus = document.getElementById('status-screen');
-            telaStatus.style.display = 'flex';
-            if (Object.keys(abasPlanilha).length > 0) {
-                document.getElementById('status-title').textContent = 'Módulo: ' + nomeDepartamento;
-                document.getElementById('status-title').style.color = '';
-                document.getElementById('status-desc').textContent = 'Selecione uma opção no submenu acima para visualizar os dados.';
+            telaStatus.style.display = 'flex'; 
+            if(Object.keys(abasPlanilha).length > 0) {
+                document.getElementById('status-title').innerText = "Módulo: " + nomeDepartamento;
+                document.getElementById('status-title').style.color = "var(--text-1)";
+                document.getElementById('status-desc').innerText = "Selecione uma categoria no menu acima.";
             }
-            document.getElementById('statusbar-modulo').textContent = nomeDepartamento;
         }
 
-        // --- UTILS ---
-        function normalizarTextoParaFiltro(txt) {
-            return String(txt || '').normalize("NFD").replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
-        }
-        function buscarValor(linha, col) {
+        function normalizarTextoParaFiltro(txt) { return String(txt || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim(); }
+        function buscarValor(linha, nomeColuna) {
             if (!linha) return '';
-            const termo = col.replace(/[\s\.\n\r\/\-]/g,'').toUpperCase();
-            for (let k in linha) {
-                if (k.replace(/[\s\.\n\r\/\-]/g,'').toUpperCase() === termo) {
-                    const v = linha[k];
-                    return (v === undefined || v === null || v === "NaN") ? '' : v;
-                }
-            }
+            const t = nomeColuna.replace(/[\s\.\n\r\/\-]/g, '').toUpperCase();
+            for (let k in linha) if (k.replace(/[\s\.\n\r\/\-]/g, '').toUpperCase() === t) return linha[k] === "NaN" || linha[k] == null ? '' : linha[k];
             return '';
         }
+
         function formatarStatusComIcone(val) {
-            const limpo = String(val||'').trim().toUpperCase().replace(/[\.\s]/g,'');
-            if (limpo==='OK') return `<div class="centralized-status"><div><span class="badge-etapa ok">OK</span></div></div>`;
-            if (['AND','ANDAM','ANDAMENTO'].includes(limpo)) return `<div class="centralized-status"><div><span class="badge-etapa andam">Andam.</span></div></div>`;
-            if (['AG','AGFUSÃO','AGFUNDIDO'].includes(limpo)) return `<div class="centralized-status"><div><span class="badge-etapa ag">AG</span></div></div>`;
-            if (['NA','N/A','','-'].includes(limpo)) return `<div class="centralized-status"><div><span class="badge-etapa vazio">—</span></div></div>`;
-            return `<div style="text-align:center;font-size:0.75rem;color:var(--text-2)">${val}</div>`;
-        }
-        function formatarDataExcel(valorData) {
-            if (!valorData) return { stringLegivel: "", dataObjeto: null };
-            if (valorData instanceof Date) {
-                const d=String(valorData.getDate()).padStart(2,'0'), m=String(valorData.getMonth()+1).padStart(2,'0'), a=valorData.getFullYear();
-                return { stringLegivel:`${d}/${m}/${a}`, dataObjeto: valorData };
-            }
-            if (typeof valorData==='number') {
-                const dt = new Date((valorData-25569)*86400*1000);
-                const d=String(dt.getDate()).padStart(2,'0'), m=String(dt.getMonth()+1).padStart(2,'0'), a=dt.getFullYear();
-                return { stringLegivel:`${d}/${m}/${a}`, dataObjeto: dt };
-            }
-            let str = String(valorData).trim();
-            if (str.includes('-')) {
-                const p=str.split('-');
-                if(p[0].length===4){ const dt=new Date(p[0],p[1]-1,p[2]); return {stringLegivel:`${p[2]}/${p[1]}/${p[0]}`, dataObjeto:dt}; }
-            }
-            return { stringLegivel: str, dataObjeto: null };
+            const limpo = String(val || '').trim().toUpperCase().replace(/[\.\s]/g, '');
+            if (limpo === 'OK') return `<div class="centralized-status"><span class="badge-etapa ok">OK</span></div>`;
+            if (limpo === 'AND' || limpo === 'ANDAM' || limpo === 'ANDAMENTO') return `<div class="centralized-status"><span class="badge-etapa andam">Andam</span></div>`;
+            if (limpo === 'AG' || limpo === 'AGFUSÃO' || limpo === 'AGFUNDIDO') return `<div class="centralized-status"><span class="badge-etapa ag">AG</span></div>`;
+            if (limpo === 'NA' || limpo === 'N/A' || limpo === '' || limpo === '-') return `<div class="centralized-status"><span class="badge-etapa vazio">-</span></div>`;
+            return `<div class="centralized-status" style="font-size:0.75rem;">${val}</div>`;
         }
 
-        // --- MENU ITEMS ---
-        const linksMenu = document.querySelectorAll('.menu-item');
-        linksMenu.forEach(link => {
+        function formatarDataExcel(valorData) {
+            if (!valorData) return { stringLegivel: "", dataObjeto: null };
+            if (valorData instanceof Date) return { stringLegivel: `${String(valorData.getDate()).padStart(2,'0')}/${String(valorData.getMonth()+1).padStart(2,'0')}/${valorData.getFullYear()}`, dataObjeto: valorData };
+            if (typeof valorData === 'number') { const d = new Date((valorData - 25569) * 86400000); return { stringLegivel: `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`, dataObjeto: d }; }
+            let s = String(valorData).trim();
+            if (s.includes('-') && s.split('-')[0].length === 4) { const p = s.split('-'); return { stringLegivel: `${p[2]}/${p[1]}/${p[0]}`, dataObjeto: new Date(p[0], p[1]-1, p[2]) }; }
+            return { stringLegivel: s, dataObjeto: null };
+        }
+
+        document.querySelectorAll('.menu-item').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                linksMenu.forEach(l => l.classList.remove('active'));
+                document.querySelectorAll('.menu-item').forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
                 document.getElementById('status-screen').style.display = 'none';
                 construirTelaPersonalizada(this.getAttribute('data-tipo'));
             });
         });
 
-        // --- CONSTRUIR TELA ---
         function construirTelaPersonalizada(tipoProduto) {
             nomeAbaAtiva = tipoProduto;
-            const areaDestino = document.getElementById('custom-dashboard-area');
-            areaDestino.innerHTML = "";
+            const area = document.getElementById('custom-dashboard-area');
+            area.innerHTML = ""; 
 
-            let dadosLinhasBrutas = [];
+            let db = [];
             if (tipoProduto === "CARTEIRA GERAL") {
-                const b = abasPlanilha[normalizarTextoParaFiltro("BAGACEIRAS")] || [];
-                const p = abasPlanilha[normalizarTextoParaFiltro("PENTES")] || [];
-                const r = abasPlanilha[normalizarTextoParaFiltro("RODETES NOVOS")] || [];
-                const f = abasPlanilha[normalizarTextoParaFiltro("PERIFÉRICOS")] || [];
-                dadosLinhasBrutas = [...b,...p,...r,...f];
-            } else {
-                dadosLinhasBrutas = abasPlanilha[normalizarTextoParaFiltro(tipoProduto)] || [];
+                db = [...(abasPlanilha[normalizarTextoParaFiltro("BAGACEIRAS")] || []), ...(abasPlanilha[normalizarTextoParaFiltro("PENTES")] || []), ...(abasPlanilha[normalizarTextoParaFiltro("RODETES NOVOS")] || []), ...(abasPlanilha[normalizarTextoParaFiltro("PERIFÉRICOS")] || [])];
+            } else { db = abasPlanilha[normalizarTextoParaFiltro(tipoProduto)] || []; }
+
+            if (db.length === 0) {
+                area.innerHTML = `<div class="status-msg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><h3>Nenhum dado encontrado</h3><p>Não existem registos na base de dados para a secção <b>${tipoProduto}</b>.</p></div>`; return;
             }
 
-            if (dadosLinhasBrutas.length === 0) {
-                areaDestino.innerHTML = `<div style="padding:2rem;text-align:center;color:#ef4444"><h2>Dados de "${tipoProduto}" não encontrados.</h2></div>`;
-                return;
-            }
+            filtroCardAtivo = 'total'; 
+            let total = 0, liberadas = 0, emProcesso = 0, finalizadas = 0, expedidos = 0, atrasos = 0, proximas = 0;
+            listaOriginalVálida = []; 
+            const hj = new Date(); hj.setHours(0,0,0,0);
 
-            filtroCardAtivo = 'total';
-            let total=0,liberadas=0,emProcesso=0,finalizadas=0,expedidos=0,atrasos=0,proximasEntregas=0;
-            listaOriginalVálida = [];
-
-            const hoje = new Date();
-            hoje.setHours(0,0,0,0);
-
-            dadosLinhasBrutas.forEach(linha => {
-                const pv        = String(buscarValor(linha,'PV')||buscarValor(linha,'O.S.')||buscarValor(linha,'OS')).trim();
-                const cliente   = String(buscarValor(linha,'Cliente')).trim();
-                const peca      = String(buscarValor(linha,'Peça')||buscarValor(linha,'Peca')||buscarValor(linha,'Cód.')||buscarValor(linha,'Cod.')).trim();
-                const seq       = String(buscarValor(linha,'Seq')||buscarValor(linha,'Seq.')).trim();
-                const descricao = String(buscarValor(linha,'Descrição')||buscarValor(linha,'Descricao')).trim();
-                const itemNum   = String(buscarValor(linha,'Item')||buscarValor(linha,'Item2')||'-').trim();
-                const qtdRaw    = buscarValor(linha,'Qtde')||buscarValor(linha,'Qtd')||buscarValor(linha,'Qtde.')||1;
-                const qtdNum    = parseInt(qtdRaw)||0;
-                const pzFundidoCru = buscarValor(linha,'Prazo Fundido')||buscarValor(linha,'Data Prev. Fundido');
-                const pzEntregaCru = buscarValor(linha,'Prazo Entrega')||buscarValor(linha,'Data Prev. Entrega');
-                const statusUsinagemCru = buscarValor(linha,'Status Usinagem')||buscarValor(linha,'Status');
-                const observacaoCru = String(buscarValor(linha,'Observação')||buscarValor(linha,'Observacao')||buscarValor(linha,'Obs')).trim();
-                const statusUsinagem = normalizarTextoParaFiltro(statusUsinagemCru);
-                const des      = String(buscarValor(linha,'Des')||buscarValor(linha,'Des. Engenharia')).trim();
-                const plainar  = String(buscarValor(linha,'Plainar')||buscarValor(linha,'Desb.')).trim();
-                const facear   = String(buscarValor(linha,'Facear')||buscarValor(linha,'T.T.')).trim();
-                const serrar   = String(buscarValor(linha,'Serrar')||buscarValor(linha,'Us. Final')).trim();
-                const soldadura= String(buscarValor(linha,'Solda Dura')||buscarValor(linha,'Fundo D.')).trim();
-                const encaixe  = String(buscarValor(linha,'Encaixe')||buscarValor(linha,'Acabam')).trim();
-                const furacao  = String(buscarValor(linha,'Furação')||buscarValor(linha,'Furação/Rosca')).trim();
-                const acabam   = String(buscarValor(linha,'Acabam.')||buscarValor(linha,'Acabam Insp.')).trim();
-                const liberacao= String(buscarValor(linha,'Liberação')).trim();
-
-                if (pv.toUpperCase()==='PV'||pv.toUpperCase()==='OS'||pv.toUpperCase()==='O.S.') return;
-                if (!pv && !cliente && !descricao) return;
+            db.forEach(L => {
+                const pv = String(buscarValor(L, 'PV') || buscarValor(L, 'O.S.') || buscarValor(L, 'OS')).trim();
+                const cl = String(buscarValor(L, 'Cliente')).trim();
+                const desc = String(buscarValor(L, 'Descrição') || buscarValor(L, 'Descricao')).trim();
+                const st = buscarValor(L, 'Status Usinagem') || buscarValor(L, 'Status');
+                const stN = normalizarTextoParaFiltro(st);
+                if (pv.toUpperCase()==="PV" || pv.toUpperCase()==="OS" || pv.toUpperCase()==="O.S.") return;
+                if (!pv && !cl && !desc) return; 
 
                 total++;
-                let isLiberada   = !['AG FUNDIDO','AG. FUNDIDO','AG FUSÃO','AG. FUSÃO'].includes(statusUsinagem);
-                let isProcesso   = ['EM USINAGEM','USINAGEM LPB','PLAINANDO'].includes(statusUsinagem);
-                let isFinalizada = ['AG COLETAR','AG. COLETAR'].includes(statusUsinagem);
-                let isExpedido   = ['EXPEDIDO','EXPEDIDOS'].includes(statusUsinagem);
-                let isAtrasado=false, isProximaEntrega=false;
-
-                let dataEntregaInfo = formatarDataExcel(pzEntregaCru);
-                if (dataEntregaInfo.dataObjeto instanceof Date) {
-                    const dpe = new Date(dataEntregaInfo.dataObjeto);
-                    dpe.setHours(0,0,0,0);
-                    const diff = Math.ceil((dpe - hoje)/(1000*60*60*24));
-                    if (!['AG COLETAR','AG. COLETAR','EXPEDIDO','EXPEDIDOS'].includes(statusUsinagem)) {
-                        if (dpe < hoje) isAtrasado = true;
-                        else if (diff>=0 && diff<=15) isProximaEntrega = true;
+                let Lb = (stN!=="AG FUNDIDO" && stN!=="AG. FUNDIDO" && stN!=="AG FUSÃO" && stN!=="AG. FUSÃO");
+                let Pr = (stN==="EM USINAGEM" || stN==="USINAGEM LPB" || stN==="PLAINANDO");
+                let Fn = (stN==="AG COLETAR" || stN==="AG. COLETAR");
+                let Ex = (stN==="EXPEDIDO" || stN==="EXPEDIDOS");
+                let At = false, Px = false;
+                
+                let dtEnt = formatarDataExcel(buscarValor(L, 'Prazo Entrega') || buscarValor(L, 'Data Prev. Entrega'));
+                if (dtEnt.dataObjeto) {
+                    let d = new Date(dtEnt.dataObjeto); d.setHours(0,0,0,0);
+                    let diff = Math.ceil((d - hj) / 86400000);
+                    if (stN!=="AG COLETAR" && stN!=="AG. COLETAR" && stN!=="EXPEDIDO" && stN!=="EXPEDIDOS") {
+                        if (d < hj) At = true; else if (diff >= 0 && diff <= 15) Px = true;
                     }
                 }
+                if(Lb) liberadas++; if(Pr) emProcesso++; if(Fn) finalizadas++; if(Ex) expedidos++; if(At) atrasos++; if(Px) proximas++;
 
-                if (isLiberada) liberadas++;
-                if (isProcesso) emProcesso++;
-                if (isFinalizada) finalizadas++;
-                if (isExpedido) expedidos++;
-                if (isAtrasado) atrasos++;
-                if (isProximaEntrega) proximasEntregas++;
-
-                let dataFundidoInfo = formatarDataExcel(pzFundidoCru);
                 listaOriginalVálida.push({
-                    valoresFormatados: { pv,item:itemNum,cliente,peca,seq,descricao,qtd:qtdNum,
-                        pzFundidoStr:dataFundidoInfo.stringLegivel,pzEntregaStr:dataEntregaInfo.stringLegivel,
-                        pzEntregaObj:dataEntregaInfo.dataObjeto,statusUsinagem:String(statusUsinagemCru).trim(),
-                        observacao:observacaoCru,atrasadoVisual:isAtrasado,proximaVisual:isProximaEntrega,
-                        des,plainar,facear,serrar,soldadura,encaixe,furacao,acabam,liberacao },
-                    filtros: { total:true,liberadas:isLiberada,processo:isProcesso,finalizadas:isFinalizada,expedidos:isExpedido,atrasos:isAtrasado,proximas:isProximaEntrega }
+                    valoresFormatados: {
+                        pv: pv, item: String(buscarValor(L, 'Item') || buscarValor(L, 'Item2') || '-').trim(), cliente: cl,
+                        peca: String(buscarValor(L, 'Peça') || buscarValor(L, 'Cód.')).trim(), seq: String(buscarValor(L, 'Seq') || buscarValor(L, 'Seq.')).trim(),
+                        descricao: desc, qtd: parseInt(buscarValor(L, 'Qtde') || buscarValor(L, 'Qtd') || 1) || 0,
+                        pzFundidoStr: formatarDataExcel(buscarValor(L, 'Prazo Fundido') || buscarValor(L, 'Data Prev. Fundido')).stringLegivel,
+                        pzEntregaStr: dtEnt.stringLegivel, pzEntregaObj: dtEnt.dataObjeto,
+                        statusUsinagem: String(st).trim(), observacao: String(buscarValor(L, 'Observação') || buscarValor(L, 'Obs')).trim(),
+                        atrasadoVisual: At, proximaVisual: Px,
+                        des: String(buscarValor(L, 'Des') || buscarValor(L, 'Des. Engenharia')).trim(), plainar: String(buscarValor(L, 'Plainar') || buscarValor(L, 'Desb.')).trim(),
+                        facear: String(buscarValor(L, 'Facear') || buscarValor(L, 'T.T.')).trim(), serrar: String(buscarValor(L, 'Serrar') || buscarValor(L, 'Us. Final')).trim(),
+                        soldadura: String(buscarValor(L, 'Solda Dura') || buscarValor(L, 'Fundo D.')).trim(), encaixe: String(buscarValor(L, 'Encaixe') || buscarValor(L, 'Acabam')).trim(),
+                        furacao: String(buscarValor(L, 'Furação')).trim(), acabam: String(buscarValor(L, 'Acabam.') || buscarValor(L, 'Acabam Insp.')).trim(),
+                        liberacao: String(buscarValor(L, 'Liberação')).trim()
+                    },
+                    filtros: { total: true, liberadas: Lb, processo: Pr, finalizadas: Fn, expedidos: Ex, atrasos: At, proximas: Px }
                 });
             });
 
-            // Ordenação
-            if (tipoProduto==="CARTEIRA GERAL") {
-                listaOriginalVálida.sort((a,b)=>{
-                    const ca=a.valoresFormatados.cliente.toLowerCase(), cb=b.valoresFormatados.cliente.toLowerCase();
-                    if(ca<cb)return -1; if(ca>cb)return 1;
-                    const da=a.valoresFormatados.pzEntregaObj, db=b.valoresFormatados.pzEntregaObj;
-                    if(da&&!db)return -1; if(!da&&db)return 1; if(da&&db){if(da<db)return -1;if(da>db)return 1;}
-                    return 0;
-                });
-            } else {
-                listaOriginalVálida.sort((a,b)=>{
-                    const da=a.valoresFormatados.pzEntregaObj, db=b.valoresFormatados.pzEntregaObj;
-                    if(da&&!db)return -1; if(!da&&db)return 1; if(da&&db){if(da<db)return -1;if(da>db)return 1;}
-                    const ca=a.valoresFormatados.cliente.toLowerCase(), cb=b.valoresFormatados.cliente.toLowerCase();
-                    if(ca<cb)return -1; if(ca>cb)return 1; return 0;
-                });
-            }
-
-            // Cards
-            const cardDefs = [
-                { tipo:'total',      label:'Total',          valor:total,            icon:'<path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="1"/>' },
-                { tipo:'proximas',   label:'Próx. Entregas', valor:proximasEntregas, icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>', somente:'CARTEIRA GERAL' },
-                { tipo:'finalizadas',label:'Finalizadas',    valor:finalizadas,      icon:'<polyline points="20 6 9 17 4 12"/>' },
-                { tipo:'expedidos',  label:'Expedidos',      valor:expedidos,        icon:'<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>' },
-                { tipo:'atrasos',    label:'Atrasos',        valor:atrasos,          icon:'<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>' },
-            ];
-
-            let cardsHTML = '';
-            cardDefs.forEach(cd => {
-                if (cd.somente && cd.somente !== tipoProduto) return;
-                cardsHTML += `
-                <div class="status-card ${cd.tipo} selected-initial" onclick="filtrarTabelaPorCard('${cd.tipo}', this)">
-                    <div class="card-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--card-color)">${cd.icon}</svg>
-                    </div>
-                    <div class="card-meta">
-                        <div class="card-title">${cd.label}</div>
-                        <div class="card-value">${cd.valor}</div>
-                    </div>
-                </div>`;
+            listaOriginalVálida.sort((a, b) => {
+                const cA = a.valoresFormatados.cliente.toLowerCase(), cB = b.valoresFormatados.cliente.toLowerCase();
+                if (cA < cB) return -1; if (cA > cB) return 1;
+                const dA = a.valoresFormatados.pzEntregaObj, dB = b.valoresFormatados.pzEntregaObj;
+                if (dA && !dB) return -1; if (!dA && dB) return 1; if (dA && dB) { if (dA < dB) return -1; if (dA > dB) return 1; }
+                if (tipoProduto === "CARTEIRA GERAL") { const sA = a.valoresFormatados.descricao.toLowerCase(), sB = b.valoresFormatados.descricao.toLowerCase(); if (sA < sB) return -1; if (sA > sB) return 1; }
+                return 0;
             });
 
-            // Colunas por tipo
-            let colunasHTML='', colunasFiltroHTML='', colspanRestante=3;
-
-            if (tipoProduto==="CARTEIRA GERAL") {
-                colspanRestante=2;
-                colunasHTML=`<th>PV</th><th>Item</th><th>Cliente</th><th>Descrição</th><th style="text-align:center">Qtd.</th><th>Prazo Entrega</th><th>Status</th>`;
-                colunasFiltroHTML=`
-                    <td><select id="filtro-col-pv" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-item" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-cliente" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-desc" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-qtd" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-pzentrega" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
-            } else if (tipoProduto==="PERIFÉRICOS") {
-                colspanRestante=4;
-                colunasHTML=`<th>PV</th><th>Cliente</th><th>Cód.</th><th>Seq.</th><th>Descrição</th><th style="text-align:center">Qtd.</th><th>Prazo Fundido</th><th>Prazo Entrega</th><th style="text-align:center">Des.</th><th>Status</th>`;
-                colunasFiltroHTML=`
-                    <td><select id="filtro-col-pv" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-cliente" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-peca" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-seq" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-desc" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-qtd" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-pzfundido" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-pzentrega" class="table-filter-select"></select></td>
-                    <td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
+            let colunas = '', filtros = '', cr = 3, colsSoma = 4;
+            if (tipoProduto === "CARTEIRA GERAL") {
+                cr=2; colsSoma=4;
+                colunas=`<th>PV</th><th>Item</th><th>Cliente</th><th>Descrição</th><th class="centralized-status">Qtde.</th><th>Prazo Entrega</th><th>Status</th>`;
+                filtros=`<td><select id="filtro-col-pv" class="table-filter-select"></select></td><td><select id="filtro-col-item" class="table-filter-select"></select></td><td><select id="filtro-col-cliente" class="table-filter-select"></select></td><td><select id="filtro-col-desc" class="table-filter-select"></select></td><td><select id="filtro-col-qtd" class="table-filter-select"></select></td><td><select id="filtro-col-pzentrega" class="table-filter-select"></select></td><td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
+            } else if (tipoProduto === "PERIFÉRICOS") {
+                cr=4; colsSoma=5;
+                colunas=`<th>PV</th><th>Cliente</th><th>Cód.</th><th>Seq.</th><th>Descrição</th><th class="centralized-status">Qtd.</th><th>Prazo Fundido</th><th>Prazo Entrega</th><th class="centralized-status">Des.</th><th>Status</th>`;
+                filtros=`<td><select id="filtro-col-pv" class="table-filter-select"></select></td><td><select id="filtro-col-cliente" class="table-filter-select"></select></td><td><select id="filtro-col-peca" class="table-filter-select"></select></td><td><select id="filtro-col-seq" class="table-filter-select"></select></td><td><select id="filtro-col-desc" class="table-filter-select"></select></td><td><select id="filtro-col-qtd" class="table-filter-select"></select></td><td><select id="filtro-col-pzfundido" class="table-filter-select"></select></td><td><select id="filtro-col-pzentrega" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
             } else {
-                let adicionaisCol='', adicionaisFiltro='';
-                if (tipoProduto==="BAGACEIRAS") {
-                    colspanRestante=10;
-                    adicionaisCol=`<th style="text-align:center">DES.</th><th style="text-align:center">PLAINAR</th><th style="text-align:center">FACEAR</th><th style="text-align:center">SERRAR</th><th style="text-align:center">SOLDA DURA</th><th style="text-align:center">ENCAIXE</th><th style="text-align:center">FURAÇÃO</th><th style="text-align:center">ACABAM.</th><th style="text-align:center">LIBERAÇÃO</th>`;
-                    adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-plainar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-facear" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-serrar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-furacao" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-acabam" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
-                } else if (tipoProduto==="PENTES") {
-                    colspanRestante=3;
-                    adicionaisCol=`<th style="text-align:center">DES. ENG.</th><th>STATUS USINAGEM</th>`;
-                    adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
-                } else if (tipoProduto==="RODETES NOVOS") {
-                    colspanRestante=8;
-                    adicionaisCol=`<th style="text-align:center">DES.</th><th style="text-align:center">DESB.</th><th style="text-align:center">T.T.</th><th style="text-align:center">US. FINAL</th><th style="text-align:center">FUNDO D.</th><th style="text-align:center">ACABAM</th><th style="text-align:center">LIBERAÇÃO</th>`;
-                    adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-plainar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-facear" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-serrar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
-                }
-                colunasHTML=`<th>PV / OS</th><th>Cliente</th><th>Peça</th><th>Seq.</th><th>Descrição</th><th style="text-align:center">Qtde.</th><th>Prazo Fundido</th><th>Prazo Entrega</th>${adicionaisCol}`;
-                colunasFiltroHTML=`<td><select id="filtro-col-pv" class="table-filter-select"></select></td><td><select id="filtro-col-cliente" class="table-filter-select"></select></td><td><select id="filtro-col-peca" class="table-filter-select"></select></td><td><select id="filtro-col-seq" class="table-filter-select"></select></td><td><select id="filtro-col-desc" class="table-filter-select"></select></td><td><select id="filtro-col-qtd" class="table-filter-select"></select></td><td><select id="filtro-col-pzfundido" class="table-filter-select"></select></td><td><select id="filtro-col-pzentrega" class="table-filter-select"></select></td>${adicionaisFiltro}`;
+                colsSoma=5;
+                let addCols='', addFilts='';
+                if (tipoProduto === "BAGACEIRAS") { cr=10; addCols=`<th class="centralized-status">DES.</th><th class="centralized-status">PLAINAR</th><th class="centralized-status">FACEAR</th><th class="centralized-status">SERRAR</th><th class="centralized-status">SOLDA DURA</th><th class="centralized-status">ENCAIXE</th><th class="centralized-status">FURAÇÃO</th><th class="centralized-status">ACABAM.</th><th class="centralized-status">LIBERAÇÃO</th>`; addFilts=`<td><select id="filtro-col-des" class="table-filter-select"></select></td><td><select id="filtro-col-plainar" class="table-filter-select"></select></td><td><select id="filtro-col-facear" class="table-filter-select"></select></td><td><select id="filtro-col-serrar" class="table-filter-select"></select></td><td><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td><select id="filtro-col-furacao" class="table-filter-select"></select></td><td><select id="filtro-col-acabam" class="table-filter-select"></select></td><td><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;}
+                else if (tipoProduto === "PENTES") { cr=3; addCols=`<th class="centralized-status">DES. ENG.</th><th>STATUS USINAGEM</th>`; addFilts=`<td><select id="filtro-col-des" class="table-filter-select"></select></td><td><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`; }
+                else if (tipoProduto === "RODETES NOVOS") { cr=8; addCols=`<th class="centralized-status">DES.</th><th class="centralized-status">DESB.</th><th class="centralized-status">T.T.</th><th class="centralized-status">US. FINAL</th><th class="centralized-status">FUNDO D.</th><th class="centralized-status">ACABAM</th><th class="centralized-status">LIBERAÇÃO</th>`; addFilts=`<td><select id="filtro-col-des" class="table-filter-select"></select></td><td><select id="filtro-col-plainar" class="table-filter-select"></select></td><td><select id="filtro-col-facear" class="table-filter-select"></select></td><td><select id="filtro-col-serrar" class="table-filter-select"></select></td><td><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`; }
+                colunas=`<th>PV/OS</th><th>Cliente</th><th>Peça</th><th>Seq.</th><th>Descrição</th><th class="centralized-status">Qtde.</th><th>Pz Fundido</th><th>Pz Entrega</th>`+addCols;
+                filtros=`<td><select id="filtro-col-pv" class="table-filter-select"></select></td><td><select id="filtro-col-cliente" class="table-filter-select"></select></td><td><select id="filtro-col-peca" class="table-filter-select"></select></td><td><select id="filtro-col-seq" class="table-filter-select"></select></td><td><select id="filtro-col-desc" class="table-filter-select"></select></td><td><select id="filtro-col-qtd" class="table-filter-select"></select></td><td><select id="filtro-col-pzfundido" class="table-filter-select"></select></td><td><select id="filtro-col-pzentrega" class="table-filter-select"></select></td>`+addFilts;
             }
 
-            areaDestino.innerHTML = `
-                <div class="section-header">
-                    <div class="section-header-line"></div>
-                    <h3>Pedidos · Açúcar e Etanol · ${tipoProduto}</h3>
-                </div>
-
-                <section class="cards-grid-6">${cardsHTML}</section>
-
+            area.innerHTML = `
+                <section class="cards-grid-6">
+                    <div class="status-card total selected" onclick="filtrarTabelaPorCard('total', this)"><div class="card-title">Pedidos</div><div class="card-value">${total}</div></div>
+                    ${tipoProduto==="CARTEIRA GERAL" ? `<div class="status-card proximas" onclick="filtrarTabelaPorCard('proximas', this)"><div class="card-title">Próx. Entregas</div><div class="card-value">${proximas}</div></div>` : ''}
+                    <div class="status-card finalizadas" onclick="filtrarTabelaPorCard('finalizadas', this)"><div class="card-title">Finalizadas</div><div class="card-value">${finalizadas}</div></div>
+                    <div class="status-card expedidos" onclick="filtrarTabelaPorCard('expedidos', this)"><div class="card-title">Expedidas</div><div class="card-value">${expedidos}</div></div>
+                    <div class="status-card atrasos" onclick="filtrarTabelaPorCard('atrasos', this)"><div class="card-title">Atrasos</div><div class="card-value">${atrasos}</div></div>
+                </section>
                 <div class="table-card">
-                    <div class="table-title-area">
-                        <div id="table-dynamic-title" class="table-title-text">Todos os Registros</div>
-                        <div id="record-count" class="table-record-count">0 itens</div>
-                    </div>
+                    <div class="table-title-area"><div class="table-title-text" id="table-dynamic-title">Todos os Pedidos</div></div>
                     <div class="table-wrapper">
                         <table class="data-table">
-                            <thead>
-                                <tr>${colunasHTML}<th style="text-align:center">Obs.</th></tr>
-                                <tr class="filter-row">${colunasFiltroHTML}<td class="centralized-status"><input type="text" id="filtro-col-obs" class="table-filter-input" placeholder="Buscar..."></td></tr>
-                            </thead>
+                            <thead><tr>${colunas}<th class="centralized-status">Obs.</th></tr><tr class="filter-row">${filtros}<td class="centralized-status"><input type="text" id="filtro-col-obs" class="table-filter-input" placeholder="Lupa..."></td></tr></thead>
                             <tbody id="tbody-dados-painel"></tbody>
-                            <tfoot>
-                                <tr>
-                                    <td id="celula-texto-soma" colspan="${tipoProduto==="CARTEIRA GERAL"?4:5}" style="text-align:right;color:var(--text-2)">SOMA TOTAL DAS PEÇAS:</td>
-                                    <td id="celula-soma-total" style="text-align:center;color:var(--accent);font-size:1rem;font-weight:700">0</td>
-                                    <td id="celula-espaco-tfoot" colspan="${colspanRestante}"></td>
-                                </tr>
-                            </tfoot>
+                            <tfoot><tr><td colspan="${colsSoma}" style="text-align:right;">SOMA TOTAL:</td><td id="celula-soma-total" class="centralized-status" style="color:var(--accent); font-size:1.1rem;">0</td><td colspan="${cr}"></td></tr></tfoot>
                         </table>
                     </div>
                 </div>
             `;
 
-            // Seleciona card total por padrão
-            const cardTotal = areaDestino.querySelector('.status-card.total');
-            if (cardTotal) cardTotal.classList.add('selected');
-
-            preencherDropdowns(tipoProduto);
-            document.querySelectorAll('.table-filter-input,.table-filter-select').forEach(el=>{
-                el.addEventListener('change', executarFiltrosCombinados);
-                el.addEventListener('input', executarFiltrosCombinados);
-            });
-            executarFiltrosCombinados();
-            document.getElementById('statusbar-modulo').textContent = `${tipoProduto}`;
-        }
-
-        function preencherDropdowns(tipoProduto) {
-            const mapa = [
-                {id:'filtro-col-pv',chave:'pv'},{id:'filtro-col-item',chave:'item'},
-                {id:'filtro-col-cliente',chave:'cliente'},{id:'filtro-col-peca',chave:'peca'},
-                {id:'filtro-col-seq',chave:'seq'},{id:'filtro-col-desc',chave:'descricao'},
-                {id:'filtro-col-qtd',chave:'qtd'},{id:'filtro-col-pzfundido',chave:'pzFundidoStr'},
-                {id:'filtro-col-pzentrega',chave:'pzEntregaStr'},{id:'filtro-col-des',chave:'des'},
-                {id:'filtro-col-plainar',chave:'plainar'},{id:'filtro-col-facear',chave:'facear'},
-                {id:'filtro-col-serrar',chave:'serrar'},{id:'filtro-col-soldadura',chave:'soldadura'},
-                {id:'filtro-col-encaixe',chave:'encaixe'},{id:'filtro-col-furacao',chave:'furacao'},
-                {id:'filtro-col-acabam',chave:'acabam'},{id:'filtro-col-liberacao',chave:'liberacao'},
-                {id:'filtro-col-status-geral',chave:'statusUsinagem'}
+            const maps = [
+                {id:'filtro-col-pv',c:'pv'},{id:'filtro-col-item',c:'item'},{id:'filtro-col-cliente',c:'cliente'},{id:'filtro-col-peca',c:'peca'},
+                {id:'filtro-col-seq',c:'seq'},{id:'filtro-col-desc',c:'descricao'},{id:'filtro-col-qtd',c:'qtd'},{id:'filtro-col-pzfundido',c:'pzFundidoStr'},
+                {id:'filtro-col-pzentrega',c:'pzEntregaStr'},{id:'filtro-col-des',c:'des'},{id:'filtro-col-plainar',c:'plainar'},{id:'filtro-col-facear',c:'facear'},
+                {id:'filtro-col-serrar',c:'serrar'},{id:'filtro-col-soldadura',c:'soldadura'},{id:'filtro-col-encaixe',c:'encaixe'},{id:'filtro-col-furacao',c:'furacao'},
+                {id:'filtro-col-acabam',c:'acabam'},{id:'filtro-col-liberacao',c:'liberacao'},{id:'filtro-col-status-geral',c:'statusUsinagem'}
             ];
-            mapa.forEach(m => {
+            maps.forEach(m => {
                 const el = document.getElementById(m.id);
-                if (el && el.tagName==='SELECT') {
-                    let vals = listaOriginalVálida.map(item => {
-                        if ((tipoProduto==="PENTES"||tipoProduto==="PERIFÉRICOS") && m.id==='filtro-col-liberacao') return item.valoresFormatados['statusUsinagem'];
-                        return item.valoresFormatados[m.chave];
-                    });
-                    let unicos = [...new Set(vals)].filter(v=>v!==undefined&&v!==null&&String(v).trim()!=='');
-                    unicos.sort((a,b)=>!isNaN(a)&&!isNaN(b)?a-b:String(a).localeCompare(String(b)));
-                    el.innerHTML = '<option value="">Todos</option>';
-                    unicos.forEach(v=>{
-                        const o=document.createElement('option');
-                        o.value=normalizarTextoParaFiltro(String(v));
-                        o.textContent=v;
-                        el.appendChild(o);
-                    });
+                if (el) {
+                    let vals = [...new Set(listaOriginalVálida.map(i => (tipoProduto==="PENTES"||tipoProduto==="PERIFÉRICOS")&&m.id==='filtro-col-liberacao' ? i.valoresFormatados['statusUsinagem'] : i.valoresFormatados[m.c]))].filter(v => v!==undefined && v!==null && String(v).trim()!=='');
+                    vals.sort((a,b) => !isNaN(a)&&!isNaN(b) ? a-b : String(a).localeCompare(String(b)));
+                    el.innerHTML = '<option value="">Filtro</option>';
+                    vals.forEach(v => { const o = document.createElement('option'); o.value = normalizarTextoParaFiltro(String(v)); o.textContent = v; el.appendChild(o); });
                 }
             });
+
+            document.querySelectorAll('.table-filter-input, .table-filter-select').forEach(i => { i.addEventListener('change', executarFiltrosCombinados); i.addEventListener('input', executarFiltrosCombinados); });
+            executarFiltrosCombinados();
         }
 
         function executarFiltrosCombinados() {
-            const tbody = document.getElementById('tbody-dados-painel');
-            if (!tbody) return;
-            tbody.innerHTML = "";
-            const f = {
-                fPv:      document.getElementById('filtro-col-pv')?.value||'',
-                fItem:    document.getElementById('filtro-col-item')?.value||'',
-                fCliente: document.getElementById('filtro-col-cliente')?.value||'',
-                fPeca:    document.getElementById('filtro-col-peca')?.value||'',
-                fSeq:     document.getElementById('filtro-col-seq')?.value||'',
-                fDesc:    document.getElementById('filtro-col-desc')?.value||'',
-                fQtd:     document.getElementById('filtro-col-qtd')?.value||'',
-                fPzFundido:  document.getElementById('filtro-col-pzfundido')?.value||'',
-                fPzEntrega:  document.getElementById('filtro-col-pzentrega')?.value||'',
-                fObs:     normalizarTextoParaFiltro(document.getElementById('filtro-col-obs')?.value||''),
-                fDes:     document.getElementById('filtro-col-des')?.value||'',
-                fPlainar: document.getElementById('filtro-col-plainar')?.value||'',
-                fFacear:  document.getElementById('filtro-col-facear')?.value||'',
-                fSerrar:  document.getElementById('filtro-col-serrar')?.value||'',
-                fSoldadura: document.getElementById('filtro-col-soldadura')?.value||'',
-                fEncaixe: document.getElementById('filtro-col-encaixe')?.value||'',
-                fFuracao: document.getElementById('filtro-col-furacao')?.value||'',
-                fAcabam:  document.getElementById('filtro-col-acabam')?.value||'',
-                fLiberacao: document.getElementById('filtro-col-liberacao')?.value||'',
-                fStatusGeral: document.getElementById('filtro-col-status-geral')?.value||''
+            const tbody = document.getElementById('tbody-dados-painel'); if(!tbody) return;
+            const F = {
+                pv: document.getElementById('filtro-col-pv')?.value||'', it: document.getElementById('filtro-col-item')?.value||'',
+                cl: document.getElementById('filtro-col-cliente')?.value||'', pc: document.getElementById('filtro-col-peca')?.value||'',
+                sq: document.getElementById('filtro-col-seq')?.value||'', ds: document.getElementById('filtro-col-desc')?.value||'',
+                qt: document.getElementById('filtro-col-qtd')?.value||'', pf: document.getElementById('filtro-col-pzfundido')?.value||'',
+                pe: document.getElementById('filtro-col-pzentrega')?.value||'', ob: normalizarTextoParaFiltro(document.getElementById('filtro-col-obs')?.value||''),
+                de: document.getElementById('filtro-col-des')?.value||'', pl: document.getElementById('filtro-col-plainar')?.value||'',
+                fa: document.getElementById('filtro-col-facear')?.value||'', sr: document.getElementById('filtro-col-serrar')?.value||'',
+                sd: document.getElementById('filtro-col-soldadura')?.value||'', en: document.getElementById('filtro-col-encaixe')?.value||'',
+                fu: document.getElementById('filtro-col-furacao')?.value||'', ac: document.getElementById('filtro-col-acabam')?.value||'',
+                li: document.getElementById('filtro-col-liberacao')?.value||'', sg: document.getElementById('filtro-col-status-geral')?.value||''
             };
-
-            let soma=0;
-            const linhas = listaOriginalVálida.filter(item => {
-                if (!item.filtros[filtroCardAtivo]) return false;
-                const vf = item.valoresFormatados;
-                if (f.fPv      && normalizarTextoParaFiltro(vf.pv)       !== f.fPv)      return false;
-                if (f.fItem    && normalizarTextoParaFiltro(vf.item)      !== f.fItem)    return false;
-                if (f.fCliente && normalizarTextoParaFiltro(vf.cliente)   !== f.fCliente) return false;
-                if (f.fPeca    && normalizarTextoParaFiltro(vf.peca)      !== f.fPeca)    return false;
-                if (f.fSeq     && normalizarTextoParaFiltro(vf.seq)       !== f.fSeq)     return false;
-                if (f.fDesc    && normalizarTextoParaFiltro(vf.descricao) !== f.fDesc)    return false;
-                if (f.fQtd     && normalizarTextoParaFiltro(String(vf.qtd)) !== f.fQtd)  return false;
-                if (f.fPzFundido && normalizarTextoParaFiltro(vf.pzFundidoStr) !== f.fPzFundido) return false;
-                if (f.fPzEntrega && normalizarTextoParaFiltro(vf.pzEntregaStr) !== f.fPzEntrega) return false;
-                if (f.fObs     && !normalizarTextoParaFiltro(vf.observacao).includes(f.fObs)) return false;
-                if (f.fDes     && normalizarTextoParaFiltro(vf.des)       !== f.fDes)     return false;
-                if (f.fPlainar && normalizarTextoParaFiltro(vf.plainar)   !== f.fPlainar) return false;
-                if (f.fFacear  && normalizarTextoParaFiltro(vf.facear)    !== f.fFacear)  return false;
-                if (f.fSerrar  && normalizarTextoParaFiltro(vf.serrar)    !== f.fSerrar)  return false;
-                if (f.fSoldadura && normalizarTextoParaFiltro(vf.soldadura) !== f.fSoldadura) return false;
-                if (f.fEncaixe && normalizarTextoParaFiltro(vf.encaixe)   !== f.fEncaixe) return false;
-                if (f.fFuracao && normalizarTextoParaFiltro(vf.furacao)   !== f.fFuracao) return false;
-                if (f.fAcabam  && normalizarTextoParaFiltro(vf.acabam)    !== f.fAcabam)  return false;
-                if (f.fStatusGeral && normalizarTextoParaFiltro(vf.statusUsinagem) !== f.fStatusGeral) return false;
-                if (nomeAbaAtiva==="BAGACEIRAS"||nomeAbaAtiva==="RODETES NOVOS") {
-                    if (f.fLiberacao && normalizarTextoParaFiltro(vf.liberacao) !== f.fLiberacao) return false;
-                } else if (nomeAbaAtiva==="PENTES"||nomeAbaAtiva==="PERIFÉRICOS") {
-                    if (f.fLiberacao && normalizarTextoParaFiltro(vf.statusUsinagem) !== f.fLiberacao) return false;
-                }
+            let soma=0; tbody.innerHTML='';
+            
+            let list = listaOriginalVálida.filter(i => {
+                if(!i.filtros[filtroCardAtivo]) return false;
+                let v = i.valoresFormatados;
+                if(F.pv && normalizarTextoParaFiltro(v.pv)!==F.pv) return false; if(F.it && normalizarTextoParaFiltro(v.item)!==F.it) return false;
+                if(F.cl && normalizarTextoParaFiltro(v.cliente)!==F.cl) return false; if(F.pc && normalizarTextoParaFiltro(v.peca)!==F.pc) return false;
+                if(F.sq && normalizarTextoParaFiltro(v.seq)!==F.sq) return false; if(F.ds && normalizarTextoParaFiltro(v.descricao)!==F.ds) return false;
+                if(F.qt && normalizarTextoParaFiltro(String(v.qtd))!==F.qt) return false; if(F.pf && normalizarTextoParaFiltro(v.pzFundidoStr)!==F.pf) return false;
+                if(F.pe && normalizarTextoParaFiltro(v.pzEntregaStr)!==F.pe) return false; if(F.ob && !normalizarTextoParaFiltro(v.observacao).includes(F.ob)) return false;
+                if(F.de && normalizarTextoParaFiltro(v.des)!==F.de) return false; if(F.pl && normalizarTextoParaFiltro(v.plainar)!==F.pl) return false;
+                if(F.fa && normalizarTextoParaFiltro(v.facear)!==F.fa) return false; if(F.sr && normalizarTextoParaFiltro(v.serrar)!==F.sr) return false;
+                if(F.sd && normalizarTextoParaFiltro(v.soldadura)!==F.sd) return false; if(F.en && normalizarTextoParaFiltro(v.encaixe)!==F.en) return false;
+                if(F.fu && normalizarTextoParaFiltro(v.furacao)!==F.fu) return false; if(F.ac && normalizarTextoParaFiltro(v.acabam)!==F.ac) return false;
+                if(F.sg && normalizarTextoParaFiltro(v.statusUsinagem)!==F.sg) return false;
+                if(nomeAbaAtiva==="BAGACEIRAS"||nomeAbaAtiva==="RODETES NOVOS"){ if(F.li && normalizarTextoParaFiltro(v.liberacao)!==F.li) return false; }
+                else if(nomeAbaAtiva==="PENTES"||nomeAbaAtiva==="PERIFÉRICOS"){ if(F.li && normalizarTextoParaFiltro(v.statusUsinagem)!==F.li) return false; }
                 return true;
             });
+            
+            list.forEach(i => soma += i.valoresFormatados.qtd); document.getElementById('celula-soma-total').innerText = soma;
+            if(list.length===0){ tbody.innerHTML=`<tr><td colspan="15" style="text-align:center; padding:2rem; color:var(--text-3);">Sem resultados</td></tr>`; return; }
 
-            linhas.forEach(item => soma += item.valoresFormatados.qtd);
-            document.getElementById('celula-soma-total').innerText = soma;
-
-            const countEl = document.getElementById('record-count');
-            if (countEl) countEl.textContent = `${linhas.length} ${linhas.length===1?'item':'itens'}`;
-
-            if (linhas.length===0) {
-                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?18:(nomeAbaAtiva==="PENTES"?11:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:16)));
-                tbody.innerHTML=`<tr><td colspan="${totalColspan}" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro corresponde aos filtros aplicados.</td></tr>`;
-                return;
-            }
-
-            linhas.forEach(item => {
-                const vf = item.valoresFormatados;
-                let alertaHTML = vf.atrasadoVisual
-                    ? `<span class="bola-vermelha-alerta" title="Prazo Vencido">🔴</span>`
-                    : vf.proximaVisual ? `<span class="bola-amarela-alerta" title="Entrega próxima (≤15 dias)">🟡</span>` : '';
-                let obsHTML = '';
-                if (vf.observacao && vf.observacao!=='undefined' && vf.observacao!=='0' && vf.observacao!=='nan') {
-                    const txt = vf.observacao.replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/\n/g,' ');
-                    obsHTML = `<button class="btn-obs-trigger" onclick="abrirModalObservacao('${txt}')" title="Ver nota">💬</button>`;
-                }
-                const tr = document.createElement('tr');
-                const statusBadge = (s) => `<span class="badge-status-usinagem">${s}</span>`;
-
-                if (nomeAbaAtiva==="CARTEIRA GERAL") {
-                    tr.innerHTML=`
-                        <td><b style="color:var(--text-1)">${vf.pv||'—'}</b></td>
-                        <td style="color:var(--text-2)">${vf.item}</td>
-                        <td>${vf.cliente}</td>
-                        <td style="color:var(--text-2)">${vf.descricao}</td>
-                        <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
-                        <td>${alertaHTML}<span style="color:${vf.atrasadoVisual?'#ef4444':vf.proximaVisual?'#fbbf24':'var(--text-1)'}">${vf.pzEntregaStr}</span></td>
-                        <td>${statusBadge(vf.statusUsinagem)}</td>
-                        <td class="centralized-status">${obsHTML}</td>`;
-                } else if (nomeAbaAtiva==="PERIFÉRICOS") {
-                    tr.innerHTML=`
-                        <td><b style="color:var(--text-1)">${vf.pv||'—'}</b></td>
-                        <td>${vf.cliente}</td>
-                        <td style="color:var(--text-2)">${vf.peca}</td>
-                        <td style="color:var(--text-2)">${vf.seq}</td>
-                        <td style="color:var(--text-2)">${vf.descricao}</td>
-                        <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
-                        <td style="color:var(--text-2)">${vf.pzFundidoStr}</td>
-                        <td>${alertaHTML}<span style="color:${vf.atrasadoVisual?'#ef4444':vf.proximaVisual?'#fbbf24':'var(--text-1)'}">${vf.pzEntregaStr}</span></td>
-                        <td class="centralized-status">${formatarStatusComIcone(vf.des)}</td>
-                        <td>${statusBadge(vf.statusUsinagem)}</td>
-                        <td class="centralized-status">${obsHTML}</td>`;
+            list.forEach(i => {
+                let v = i.valoresFormatados, ic = v.atrasadoVisual ? '<span class="alerta-bolinha red"></span>' : (v.proximaVisual ? '<span class="alerta-bolinha yellow"></span>' : '');
+                let ob = v.observacao && v.observacao!=='0' && v.observacao!=='nan' ? `<button class="btn-obs-trigger" onclick="abrirModalObservacao('${v.observacao.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ')}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> Nota</button>` : '-';
+                let tr = document.createElement('tr');
+                if (nomeAbaAtiva === "CARTEIRA GERAL") {
+                    tr.innerHTML = `<td><b>${v.pv||'-'}</b></td><td>${v.item}</td><td>${v.cliente}</td><td>${v.descricao}</td><td class="centralized-status"><b>${v.qtd}</b></td><td>${ic}${v.pzEntregaStr}</td><td><span class="badge-usinagem">${v.statusUsinagem}</span></td><td class="centralized-status">${ob}</td>`;
+                } else if (nomeAbaAtiva === "PERIFÉRICOS") {
+                    tr.innerHTML = `<td><b>${v.pv||'-'}</b></td><td>${v.cliente}</td><td>${v.peca}</td><td>${v.seq}</td><td>${v.descricao}</td><td class="centralized-status"><b>${v.qtd}</b></td><td>${v.pzFundidoStr}</td><td>${ic}${v.pzEntregaStr}</td>${formatarStatusComIcone(v.des)}<td><span class="badge-usinagem">${v.statusUsinagem}</span></td><td class="centralized-status">${ob}</td>`;
                 } else {
-                    let adicionais='';
-                    if (nomeAbaAtiva==="BAGACEIRAS") {
-                        adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td class="centralized-status">${formatarStatusComIcone(vf.plainar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.facear)}</td><td class="centralized-status">${formatarStatusComIcone(vf.serrar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.soldadura)}</td><td class="centralized-status">${formatarStatusComIcone(vf.encaixe)}</td><td class="centralized-status">${formatarStatusComIcone(vf.furacao)}</td><td class="centralized-status">${formatarStatusComIcone(vf.acabam)}</td><td class="centralized-status">${formatarStatusComIcone(vf.liberacao)}</td>`;
-                    } else if (nomeAbaAtiva==="PENTES") {
-                        adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td>${statusBadge(vf.statusUsinagem)}</td>`;
-                    } else if (nomeAbaAtiva==="RODETES NOVOS") {
-                        adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td class="centralized-status">${formatarStatusComIcone(vf.plainar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.facear)}</td><td class="centralized-status">${formatarStatusComIcone(vf.serrar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.soldadura)}</td><td class="centralized-status">${formatarStatusComIcone(vf.encaixe)}</td><td class="centralized-status">${formatarStatusComIcone(vf.liberacao)}</td>`;
-                    }
-                    tr.innerHTML=`
-                        <td><b style="color:var(--text-1)">${vf.pv||'—'}</b></td>
-                        <td>${vf.cliente}</td>
-                        <td style="color:var(--text-2)">${vf.peca}</td>
-                        <td style="color:var(--text-2)">${vf.seq}</td>
-                        <td style="color:var(--text-2)">${vf.descricao}</td>
-                        <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
-                        <td style="color:var(--text-2)">${vf.pzFundidoStr}</td>
-                        <td>${alertaHTML}<span style="color:${vf.atrasadoVisual?'#ef4444':vf.proximaVisual?'#fbbf24':'var(--text-1)'}">${vf.pzEntregaStr}</span></td>
-                        ${adicionais}
-                        <td class="centralized-status">${obsHTML}</td>`;
+                    let ad = '';
+                    if(nomeAbaAtiva==="BAGACEIRAS") ad=`${formatarStatusComIcone(v.des)}${formatarStatusComIcone(v.plainar)}${formatarStatusComIcone(v.facear)}${formatarStatusComIcone(v.serrar)}${formatarStatusComIcone(v.soldadura)}${formatarStatusComIcone(v.encaixe)}${formatarStatusComIcone(v.furacao)}${formatarStatusComIcone(v.acabam)}${formatarStatusComIcone(v.liberacao)}`;
+                    else if(nomeAbaAtiva==="PENTES") ad=`${formatarStatusComIcone(v.des)}<td><span class="badge-usinagem">${v.statusUsinagem}</span></td>`;
+                    else if(nomeAbaAtiva==="RODETES NOVOS") ad=`${formatarStatusComIcone(v.des)}${formatarStatusComIcone(v.plainar)}${formatarStatusComIcone(v.facear)}${formatarStatusComIcone(v.serrar)}${formatarStatusComIcone(v.soldadura)}${formatarStatusComIcone(v.encaixe)}${formatarStatusComIcone(v.liberacao)}`;
+                    tr.innerHTML = `<td><b>${v.pv||'-'}</b></td><td>${v.cliente}</td><td>${v.peca}</td><td>${v.seq}</td><td>${v.descricao}</td><td class="centralized-status"><b>${v.qtd}</b></td><td>${v.pzFundidoStr}</td><td>${ic}${v.pzEntregaStr}</td>${ad}<td class="centralized-status">${ob}</td>`;
                 }
-                tbody.appendChild(tr);
-            });
-        }
-
-        function abrirModalObservacao(texto) {
-            document.getElementById('modal-conteudo-texto').innerText = texto;
-            document.getElementById('modal-observacao').classList.add('active');
-        }
-        function fecharModalObservacao(evento) {
-            if (evento.target.id==='modal-observacao') document.getElementById('modal-observacao').classList.remove('active');
-        }
-
-        function filtrarTabelaPorCard(tipoFiltro, elementoCard) {
-            document.querySelectorAll('.status-card').forEach(c => c.classList.remove('selected'));
-            elementoCard.classList.add('selected');
-            filtroCardAtivo = tipoFiltro;
-            const titulos = {
-                total:'Todos os Pedidos', liberadas:'Itens Liberados', processo:'Em Processo',
-                finalizadas:'Itens Finalizados', expedidos:'Expedidos', atrasos:'Prazos Vencidos', proximas:'Próximas Entregas (≤15 dias)'
-            };
-            document.getElementById('table-dynamic-title').textContent = titulos[tipoFiltro] || 'Todos';
-            executarFiltrosCombinados();
-        }
-
-        function mostrarToast(mensagem, isError=false) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').innerText = mensagem;
-            document.getElementById('toast-icon').innerText = isError ? '✕' : '✓';
-            toast.classList.toggle('error', isError);
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 4000);
-        }
-    </script>
-</body>
-</html>
