@@ -464,15 +464,6 @@
         .centralized-status { text-align: center; vertical-align: middle; }
         .centralized-status div { display: inline-block; }
 
-        /* Carteira Diversos — colunas de data compactas */
-        #tbl-diversos td:nth-child(n+6):nth-child(-n+13),
-        #tbl-diversos th:nth-child(n+6):nth-child(-n+13) {
-            padding-left: 0.45rem;
-            padding-right: 0.45rem;
-            font-size: 0.72rem;
-            white-space: nowrap;
-        }
-
         /* --- MODAL --- */
         .modal-overlay {
             position: fixed; inset: 0;
@@ -1271,10 +1262,7 @@
             document.getElementById('statusbar-modulo').textContent = `${tipoProduto}`;
         }
 
-        function preencherDropdowns(tipoProduto, listaFiltrada) {
-            // listaFiltrada: se fornecida, usa para popular cada dropdown (exceto o próprio campo)
-            // caso contrário, usa listaOriginalVálida completa (chamada inicial)
-            const lista = listaFiltrada || listaOriginalVálida;
+        function preencherDropdowns(tipoProduto) {
             const mapa = [
                 {id:'filtro-col-pv',chave:'pv'},{id:'filtro-col-item',chave:'item'},
                 {id:'filtro-col-cliente',chave:'cliente'},{id:'filtro-col-peca',chave:'peca'},
@@ -1290,9 +1278,8 @@
             mapa.forEach(m => {
                 const el = document.getElementById(m.id);
                 if (el && el.tagName==='SELECT') {
-                    const valorAtual = el.value; // preserve current selection
-                    let vals = lista.map(item => {
-                        if ((nomeAbaAtiva==="PENTES"||nomeAbaAtiva==="PERIFÉRICOS") && m.id==='filtro-col-liberacao') return item.valoresFormatados['statusUsinagem'];
+                    let vals = listaOriginalVálida.map(item => {
+                        if ((tipoProduto==="PENTES"||tipoProduto==="PERIFÉRICOS") && m.id==='filtro-col-liberacao') return item.valoresFormatados['statusUsinagem'];
                         return item.valoresFormatados[m.chave];
                     });
                     let unicos = [...new Set(vals)].filter(v=>v!==undefined&&v!==null&&String(v).trim()!=='');
@@ -1304,42 +1291,7 @@
                         o.textContent=v;
                         el.appendChild(o);
                     });
-                    // restore selection if still valid
-                    if (valorAtual && [...el.options].some(o=>o.value===valorAtual)) {
-                        el.value = valorAtual;
-                    }
                 }
-            });
-        }
-
-        function _aplicarFiltrosColunas(lista, f) {
-            return lista.filter(item => {
-                const vf = item.valoresFormatados;
-                if (f.fPv      && normalizarTextoParaFiltro(vf.pv)       !== f.fPv)      return false;
-                if (f.fItem    && normalizarTextoParaFiltro(vf.item)      !== f.fItem)    return false;
-                if (f.fCliente && normalizarTextoParaFiltro(vf.cliente)   !== f.fCliente) return false;
-                if (f.fPeca    && normalizarTextoParaFiltro(vf.peca)      !== f.fPeca)    return false;
-                if (f.fSeq     && normalizarTextoParaFiltro(vf.seq)       !== f.fSeq)     return false;
-                if (f.fDesc    && normalizarTextoParaFiltro(vf.descricao) !== f.fDesc)    return false;
-                if (f.fQtd     && normalizarTextoParaFiltro(String(vf.qtd)) !== f.fQtd)  return false;
-                if (f.fPzFundido && normalizarTextoParaFiltro(vf.pzFundidoStr) !== f.fPzFundido) return false;
-                if (f.fPzEntrega && normalizarTextoParaFiltro(vf.pzEntregaStr) !== f.fPzEntrega) return false;
-                if (f.fObs     && !normalizarTextoParaFiltro(vf.observacao).includes(f.fObs)) return false;
-                if (f.fDes     && normalizarTextoParaFiltro(vf.des)       !== f.fDes)     return false;
-                if (f.fPlainar && normalizarTextoParaFiltro(vf.plainar)   !== f.fPlainar) return false;
-                if (f.fFacear  && normalizarTextoParaFiltro(vf.facear)    !== f.fFacear)  return false;
-                if (f.fSerrar  && normalizarTextoParaFiltro(vf.serrar)    !== f.fSerrar)  return false;
-                if (f.fSoldadura && normalizarTextoParaFiltro(vf.soldadura) !== f.fSoldadura) return false;
-                if (f.fEncaixe && normalizarTextoParaFiltro(vf.encaixe)   !== f.fEncaixe) return false;
-                if (f.fFuracao && normalizarTextoParaFiltro(vf.furacao)   !== f.fFuracao) return false;
-                if (f.fAcabam  && normalizarTextoParaFiltro(vf.acabam)    !== f.fAcabam)  return false;
-                if (f.fStatusGeral && normalizarTextoParaFiltro(vf.statusUsinagem) !== f.fStatusGeral) return false;
-                if (nomeAbaAtiva==="BAGACEIRAS"||nomeAbaAtiva==="RODETES NOVOS") {
-                    if (f.fLiberacao && normalizarTextoParaFiltro(vf.liberacao) !== f.fLiberacao) return false;
-                } else if (nomeAbaAtiva==="PENTES"||nomeAbaAtiva==="PERIFÉRICOS") {
-                    if (f.fLiberacao && normalizarTextoParaFiltro(vf.statusUsinagem) !== f.fLiberacao) return false;
-                }
-                return true;
             });
         }
 
@@ -1370,39 +1322,36 @@
                 fStatusGeral: document.getElementById('filtro-col-status-geral')?.value||''
             };
 
-            // Lista base sem filtro de card (para atualizar dropdowns e recalcular cards)
-            const listaBase = _aplicarFiltrosColunas(listaOriginalVálida, f);
-
-            // Recalcular valores dos cards com base nos dados filtrados pelas colunas
-            const hoje = new Date(); hoje.setHours(0,0,0,0);
-            let cTotal=0, cLiberadas=0, cProcesso=0, cFinalizadas=0, cExpedidos=0, cAtrasos=0, cProximas=0;
-            listaBase.forEach(item => {
-                cTotal++;
-                if (item.filtros.liberadas)  cLiberadas++;
-                if (item.filtros.processo)   cProcesso++;
-                if (item.filtros.finalizadas) cFinalizadas++;
-                if (item.filtros.expedidos)  cExpedidos++;
-                if (item.filtros.atrasos)    cAtrasos++;
-                if (item.filtros.proximas)   cProximas++;
-            });
-            // Atualizar valores visíveis nos cards
-            const atualizarCard = (tipo, val) => {
-                const card = document.querySelector(`.status-card.${tipo} .card-value`);
-                if (card) card.textContent = val;
-            };
-            atualizarCard('total', cTotal);
-            atualizarCard('liberadas', cLiberadas);
-            atualizarCard('processo', cProcesso);
-            atualizarCard('finalizadas', cFinalizadas);
-            atualizarCard('expedidos', cExpedidos);
-            atualizarCard('atrasos', cAtrasos);
-            atualizarCard('proximas', cProximas);
-
-            // Atualizar dropdowns em cascata (com base nos dados filtrados pelas colunas)
-            preencherDropdowns(nomeAbaAtiva, listaBase);
-
             let soma=0;
-            const linhas = listaBase.filter(item => item.filtros[filtroCardAtivo]);
+            const linhas = listaOriginalVálida.filter(item => {
+                if (!item.filtros[filtroCardAtivo]) return false;
+                const vf = item.valoresFormatados;
+                if (f.fPv      && normalizarTextoParaFiltro(vf.pv)       !== f.fPv)      return false;
+                if (f.fItem    && normalizarTextoParaFiltro(vf.item)      !== f.fItem)    return false;
+                if (f.fCliente && normalizarTextoParaFiltro(vf.cliente)   !== f.fCliente) return false;
+                if (f.fPeca    && normalizarTextoParaFiltro(vf.peca)      !== f.fPeca)    return false;
+                if (f.fSeq     && normalizarTextoParaFiltro(vf.seq)       !== f.fSeq)     return false;
+                if (f.fDesc    && normalizarTextoParaFiltro(vf.descricao) !== f.fDesc)    return false;
+                if (f.fQtd     && normalizarTextoParaFiltro(String(vf.qtd)) !== f.fQtd)  return false;
+                if (f.fPzFundido && normalizarTextoParaFiltro(vf.pzFundidoStr) !== f.fPzFundido) return false;
+                if (f.fPzEntrega && normalizarTextoParaFiltro(vf.pzEntregaStr) !== f.fPzEntrega) return false;
+                if (f.fObs     && !normalizarTextoParaFiltro(vf.observacao).includes(f.fObs)) return false;
+                if (f.fDes     && normalizarTextoParaFiltro(vf.des)       !== f.fDes)     return false;
+                if (f.fPlainar && normalizarTextoParaFiltro(vf.plainar)   !== f.fPlainar) return false;
+                if (f.fFacear  && normalizarTextoParaFiltro(vf.facear)    !== f.fFacear)  return false;
+                if (f.fSerrar  && normalizarTextoParaFiltro(vf.serrar)    !== f.fSerrar)  return false;
+                if (f.fSoldadura && normalizarTextoParaFiltro(vf.soldadura) !== f.fSoldadura) return false;
+                if (f.fEncaixe && normalizarTextoParaFiltro(vf.encaixe)   !== f.fEncaixe) return false;
+                if (f.fFuracao && normalizarTextoParaFiltro(vf.furacao)   !== f.fFuracao) return false;
+                if (f.fAcabam  && normalizarTextoParaFiltro(vf.acabam)    !== f.fAcabam)  return false;
+                if (f.fStatusGeral && normalizarTextoParaFiltro(vf.statusUsinagem) !== f.fStatusGeral) return false;
+                if (nomeAbaAtiva==="BAGACEIRAS"||nomeAbaAtiva==="RODETES NOVOS") {
+                    if (f.fLiberacao && normalizarTextoParaFiltro(vf.liberacao) !== f.fLiberacao) return false;
+                } else if (nomeAbaAtiva==="PENTES"||nomeAbaAtiva==="PERIFÉRICOS") {
+                    if (f.fLiberacao && normalizarTextoParaFiltro(vf.statusUsinagem) !== f.fLiberacao) return false;
+                }
+                return true;
+            });
 
             linhas.forEach(item => soma += item.valoresFormatados.qtd);
             document.getElementById('celula-soma-total').innerText = soma;
@@ -1673,16 +1622,16 @@
                                     <th>Peça</th>
                                     <th>Descrição</th>
                                     <th style="text-align:center">Qtd.</th>
-                                    <th style="width:88px">Prazo Contratual</th>
-                                    <th style="width:80px">Fund.Prev. Desb.</th>
-                                    <th style="width:80px">Fund.Real Desb.</th>
-                                    <th style="width:80px">Usin.Prev. Desb.</th>
-                                    <th style="width:80px">Usin.Real Desb.</th>
-                                    <th style="width:80px">Fund.Prev. Acab.</th>
-                                    <th style="width:80px">Usin.Prev. Acab.</th>
-                                    <th style="width:80px">Usin.Real Acab.</th>
+                                    <th>Prazo Contratual</th>
+                                    <th>Fund.Prev. Desb.</th>
+                                    <th>Fund.Real Desb.</th>
+                                    <th>Usin.Prev. Desb.</th>
+                                    <th>Usin.Real Desb.</th>
+                                    <th>Fund.Prev. Acab.</th>
+                                    <th>Usin.Prev. Acab.</th>
+                                    <th>Usin.Real Acab.</th>
                                     <th>Status Usin.</th>
-                                    <th style="width:220px">Recurso Orçado</th>
+                                    <th>Recurso Orçado</th>
                                     <th>Obs.</th>
                                 </tr>
                                 <tr class="filter-row">
@@ -1711,13 +1660,25 @@
                 </div>
             `;
 
-            // Populate filter dropdowns (initial population)
-            populateSelectDiversos('df-os',     diversosListaOriginal.map(r=>r.os));
-            populateSelectDiversos('df-cli',    diversosListaOriginal.map(r=>r.cliente));
-            populateSelectDiversos('df-peca',   diversosListaOriginal.map(r=>r.peca));
-            populateSelectDiversos('df-desc',   diversosListaOriginal.map(r=>r.descricao));
-            populateSelectDiversos('df-prazo',  diversosListaOriginal.map(r=>r.prazoContraStr));
-            populateSelectDiversos('df-status', diversosListaOriginal.map(r=>r.statusUs));
+            // Populate filter dropdowns
+            const populateSelect = (id, values) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const uniq = [...new Set(values.filter(v=>v&&String(v).trim()!=''))].sort((a,b)=>String(a).localeCompare(String(b)));
+                el.innerHTML = '<option value="">Todos</option>';
+                uniq.forEach(v => {
+                    const o = document.createElement('option');
+                    o.value = normalizarTextoParaFiltro(String(v));
+                    o.textContent = v;
+                    el.appendChild(o);
+                });
+            };
+            populateSelect('df-os',     diversosListaOriginal.map(r=>r.os));
+            populateSelect('df-cli',    diversosListaOriginal.map(r=>r.cliente));
+            populateSelect('df-peca',   diversosListaOriginal.map(r=>r.peca));
+            populateSelect('df-desc',   diversosListaOriginal.map(r=>r.descricao));
+            populateSelect('df-prazo',  diversosListaOriginal.map(r=>r.prazoContraStr));
+            populateSelect('df-status', diversosListaOriginal.map(r=>r.statusUs));
 
             document.querySelectorAll('#tbl-diversos .table-filter-select, #tbl-diversos .table-filter-input').forEach(el => {
                 el.addEventListener('change', diversosRenderizar);
@@ -1725,34 +1686,6 @@
             });
 
             diversosRenderizar();
-        }
-
-        function populateSelectDiversos(id, values, preserveValue) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            const current = preserveValue !== undefined ? preserveValue : el.value;
-            const uniq = [...new Set(values.filter(v=>v&&String(v).trim()!=''))].sort((a,b)=>String(a).localeCompare(String(b)));
-            el.innerHTML = '<option value="">Todos</option>';
-            uniq.forEach(v => {
-                const o = document.createElement('option');
-                o.value = normalizarTextoParaFiltro(String(v));
-                o.textContent = v;
-                el.appendChild(o);
-            });
-            if (current && [...el.options].some(o=>o.value===current)) el.value = current;
-        }
-
-        function _diversosFiltrarColunas(lista, fOs, fCli, fPeca, fDesc, fPrazo, fStatus, fObs) {
-            return lista.filter(r => {
-                if (fOs    && normalizarTextoParaFiltro(r.os)        !== fOs)    return false;
-                if (fCli   && normalizarTextoParaFiltro(r.cliente)   !== fCli)   return false;
-                if (fPeca  && normalizarTextoParaFiltro(r.peca)      !== fPeca)  return false;
-                if (fDesc  && normalizarTextoParaFiltro(r.descricao) !== fDesc)  return false;
-                if (fPrazo && normalizarTextoParaFiltro(r.prazoContraStr) !== fPrazo) return false;
-                if (fStatus&& normalizarTextoParaFiltro(r.statusUs)  !== fStatus)return false;
-                if (fObs   && !normalizarTextoParaFiltro(r.obs).includes(fObs))  return false;
-                return true;
-            });
         }
 
         function diversosFiltrarCard(aba, el) {
@@ -1776,32 +1709,16 @@
             const fStatus = document.getElementById('df-status')?.value||'';
             const fObs    = normalizarTextoParaFiltro(document.getElementById('df-obs')?.value||'');
 
-            // Lista filtrada pelas colunas (sem filtro de card) para atualizar dropdowns e cards
-            const listaBase = _diversosFiltrarColunas(diversosListaOriginal, fOs, fCli, fPeca, fDesc, fPrazo, fStatus, fObs);
-
-            // Recalcular cards com base nos dados filtrados pelas colunas
-            const cTotal = listaBase.length;
-            const cFin   = listaBase.filter(r=>r.isFinalizada).length;
-            const cAtr   = listaBase.filter(r=>r.isAtrasado).length;
-            const cardTotalEl = document.getElementById('div-card-total');
-            const cardFinEl   = document.getElementById('div-card-fin');
-            const cardAtrEl   = document.getElementById('div-card-atr');
-            if (cardTotalEl) cardTotalEl.textContent = cTotal;
-            if (cardFinEl)   cardFinEl.textContent   = cFin;
-            if (cardAtrEl)   cardAtrEl.textContent   = cAtr;
-
-            // Atualizar dropdowns em cascata
-            populateSelectDiversos('df-os',     listaBase.map(r=>r.os),         fOs);
-            populateSelectDiversos('df-cli',    listaBase.map(r=>r.cliente),    fCli);
-            populateSelectDiversos('df-peca',   listaBase.map(r=>r.peca),       fPeca);
-            populateSelectDiversos('df-desc',   listaBase.map(r=>r.descricao),  fDesc);
-            populateSelectDiversos('df-prazo',  listaBase.map(r=>r.prazoContraStr), fPrazo);
-            populateSelectDiversos('df-status', listaBase.map(r=>r.statusUs),   fStatus);
-
-            // Aplicar filtro de card
-            let lista = listaBase.filter(r => {
+            let lista = diversosListaOriginal.filter(r => {
                 if (diversosFiltroAba === 'finalizadas' && !r.isFinalizada) return false;
                 if (diversosFiltroAba === 'atrasos'     && !r.isAtrasado)   return false;
+                if (fOs    && normalizarTextoParaFiltro(r.os)        !== fOs)    return false;
+                if (fCli   && normalizarTextoParaFiltro(r.cliente)   !== fCli)   return false;
+                if (fPeca  && normalizarTextoParaFiltro(r.peca)      !== fPeca)  return false;
+                if (fDesc  && normalizarTextoParaFiltro(r.descricao) !== fDesc)  return false;
+                if (fPrazo && normalizarTextoParaFiltro(r.prazoContraStr) !== fPrazo) return false;
+                if (fStatus&& normalizarTextoParaFiltro(r.statusUs)  !== fStatus)return false;
+                if (fObs   && !normalizarTextoParaFiltro(r.obs).includes(fObs))  return false;
                 return true;
             });
 
