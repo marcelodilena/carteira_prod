@@ -770,7 +770,8 @@
                 <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('BAGACEIRAS')">Bagaceiras</div>
                 <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('PENTES')">Pentes</div>
                 <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('RODETES NOVOS')">Rodetes Novos</div>
-                <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('CAMISAS NOVAS')">Camisas Novas</div>
+                <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('CAMISA')">Somente Camisa</div>
+                <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('EIXOS')">Eixos</div>
                 <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('PERIFÉRICOS')">Periféricos</div>
             </div>
             <div id="drawer-sub-engenharia" style="display:none">
@@ -842,7 +843,8 @@
             <li><a class="sub-tab menu-item" data-tipo="BAGACEIRAS">Bagaceiras</a></li>
             <li><a class="sub-tab menu-item" data-tipo="PENTES">Pentes</a></li>
             <li><a class="sub-tab menu-item" data-tipo="RODETES NOVOS">Rodetes Novos</a></li>
-            <li><a class="sub-tab menu-item" data-tipo="CAMISAS NOVAS">Camisas Novas</a></li>
+            <li><a class="sub-tab menu-item" data-tipo="CAMISA">Somente Camisa</a></li>
+            <li><a class="sub-tab menu-item" data-tipo="EIXOS">Eixos</a></li>
             <li><a class="sub-tab menu-item" data-tipo="PERIFÉRICOS">Periféricos</a></li>
         </ul>
         <ul id="sub-engenharia" class="sub-tabs-group">
@@ -1047,8 +1049,10 @@
                 const b = abasPlanilha[normalizarTextoParaFiltro("BAGACEIRAS")] || [];
                 const p = abasPlanilha[normalizarTextoParaFiltro("PENTES")] || [];
                 const r = abasPlanilha[normalizarTextoParaFiltro("RODETES NOVOS")] || [];
+                const c = abasPlanilha[normalizarTextoParaFiltro("CAMISA")] || [];
+                const e = abasPlanilha[normalizarTextoParaFiltro("EIXOS")] || [];
                 const f = abasPlanilha[normalizarTextoParaFiltro("PERIFÉRICOS")] || [];
-                dadosLinhasBrutas = [...b,...p,...r,...f];
+                dadosLinhasBrutas = [...b,...p,...r,...c,...e,...f];
             } else {
                 dadosLinhasBrutas = abasPlanilha[normalizarTextoParaFiltro(tipoProduto)] || [];
             }
