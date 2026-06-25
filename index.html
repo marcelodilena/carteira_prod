@@ -770,7 +770,8 @@
                 <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('BAGACEIRAS')">Bagaceiras</div>
                 <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('PENTES')">Pentes</div>
                 <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('RODETES NOVOS')">Rodetes Novos</div>
-                <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('CAMISAS NOVAS')">Camisas Novas</div>
+                <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('CAMISA')">Camisas</div>
+                <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('EIXOS')">Eixos</div>
                 <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('PERIFÉRICOS')">Periféricos</div>
             </div>
             <div id="drawer-sub-engenharia" style="display:none">
@@ -842,7 +843,8 @@
             <li><a class="sub-tab menu-item" data-tipo="BAGACEIRAS">Bagaceiras</a></li>
             <li><a class="sub-tab menu-item" data-tipo="PENTES">Pentes</a></li>
             <li><a class="sub-tab menu-item" data-tipo="RODETES NOVOS">Rodetes Novos</a></li>
-            <li><a class="sub-tab menu-item" data-tipo="CAMISAS NOVAS">Camisas Novas</a></li>
+            <li><a class="sub-tab menu-item" data-tipo="CAMISA">Camisas</a></li>
+            <li><a class="sub-tab menu-item" data-tipo="EIXOS">Eixos</a></li>
             <li><a class="sub-tab menu-item" data-tipo="PERIFÉRICOS">Periféricos</a></li>
         </ul>
         <ul id="sub-engenharia" class="sub-tabs-group">
@@ -939,7 +941,6 @@
 
                 const linkCarteiraGeral = document.querySelector('[data-tipo="CARTEIRA GERAL"]');
                 if (linkCarteiraGeral) linkCarteiraGeral.click();
-                document.querySelectorAll('[data-tipo="CAMISA"]').forEach(el=>el.addEventListener('click', ()=>construirTelaCamisa()));
 
             } catch (error) {
                 statusDot.className = 'status-dot error';
@@ -1029,7 +1030,7 @@
                 this.classList.add('active');
                 document.getElementById('status-screen').style.display = 'none';
                 const tipo = this.getAttribute('data-tipo');
-                if (tipo === 'CAMISA') { construirTelaCamisa(); } else if (tipo === 'VI DIVERSOS') {
+                if (tipo === 'VI DIVERSOS') {
                     construirTelaVIDiversos();
                 } else {
                     construirTelaPersonalizada(tipo);
@@ -1048,8 +1049,10 @@
                 const b = abasPlanilha[normalizarTextoParaFiltro("BAGACEIRAS")] || [];
                 const p = abasPlanilha[normalizarTextoParaFiltro("PENTES")] || [];
                 const r = abasPlanilha[normalizarTextoParaFiltro("RODETES NOVOS")] || [];
+                const c = abasPlanilha[normalizarTextoParaFiltro("CAMISA")] || [];
+                const e = abasPlanilha[normalizarTextoParaFiltro("EIXOS")] || [];
                 const f = abasPlanilha[normalizarTextoParaFiltro("PERIFÉRICOS")] || [];
-                dadosLinhasBrutas = [...b,...p,...r,...f];
+                dadosLinhasBrutas = [...b,...p,...r,...c,...e,...f];
             } else {
                 dadosLinhasBrutas = abasPlanilha[normalizarTextoParaFiltro(tipoProduto)] || [];
             }
@@ -1427,19 +1430,6 @@
             });
         }
 
-        
-        function construirTelaCamisa() {
-            nomeAbaAtiva='CAMISA';
-            document.getElementById('statusbar-modulo').textContent='Camisas';
-            const area=document.getElementById('custom-dashboard-area');
-            const dados=abasPlanilha[normalizarTextoParaFiltro('CAMISA e EIXO')]||[];
-            let total=dados.length,liberadas=0,expedidas=0,atrasos=0;
-            dados.forEach(l=>{const st=String(buscarValor(l,'Status Camisa')||'').toUpperCase(); if(st.includes('LIB')) liberadas++; if(st.includes('EXPED')) expedidas++;});
-            let linhas='';
-            dados.forEach(l=>{linhas+=`<tr><td>${buscarValor(l,'PV')||''}</td><td>${buscarValor(l,'Cliente')||''}</td><td>${buscarValor(l,'O.S./Peça')||buscarValor(l,'O.S./Peças')||''}</td><td>${buscarValor(l,'Descrição')||''}</td><td>${buscarValor(l,'Qtde.')||''}</td><td>${buscarValor(l,'Bitola')||''}</td><td>${buscarValor(l,'Terno')||''}</td><td>${buscarValor(l,'Forma')||''}</td><td>${buscarValor(l,'Prazo Fund')||''}</td><td>${buscarValor(l,'Prazo Entrega Camisa')||''}</td><td>${buscarValor(l,'Des')||''}</td><td>${buscarValor(l,'Recursos Usinagem Camisa')||''}</td><td>${statusBadge(buscarValor(l,'Status Camisa')||'')}</td><td>${buscarValor(l,'Nº Eixo2')||buscarValor(l,'Nº Eixo')||''}</td><td><button class='btn-modal-close' onclick='abrirModalObservacao(String.raw`${buscarValor(l,'Observação')||''}`)'>Ver</button></td></tr>`});
-            area.innerHTML=`<div class='cards-grid'><div class='status-card selected'><div class='card-title'>Total</div><div class='card-value'>${total}</div></div><div class='status-card'><div class='card-title'>Liberadas</div><div class='card-value'>${liberadas}</div></div><div class='status-card'><div class='card-title'>Expedidas</div><div class='card-value'>${expedidas}</div></div><div class='status-card'><div class='card-title'>Atrasos</div><div class='card-value'>${atrasos}</div></div></div><div class='table-container' style='overflow:auto;flex:1'><h3 id='table-dynamic-title'>Camisas</h3><table class='data-table'><thead><tr><th>PV</th><th>Cliente</th><th>O.S./Peças</th><th>Descrição</th><th>Qtde.</th><th>Bitola</th><th>Terno</th><th>Forma</th><th>Prazo Fund</th><th>Prazo Entrega Camisa</th><th>Des</th><th>Recursos Usinagem Camisa</th><th>Status Camisa</th><th>Nº Eixo2</th><th>Observação</th></tr></thead><tbody>${linhas}</tbody></table></div>`;
-        }
-
         function abrirModalObservacao(texto) {
             document.getElementById('modal-conteudo-texto').innerText = texto;
             document.getElementById('modal-observacao').classList.add('active');
@@ -1475,7 +1465,7 @@
             // close drawer if exists
             const drawer = document.getElementById('mobile-drawer');
             if (drawer) drawer.classList.remove('open');
-            if (tipo === 'CAMISA') { construirTelaCamisa(); } else if (tipo === 'VI DIVERSOS') {
+            if (tipo === 'VI DIVERSOS') {
                 construirTelaVIDiversos();
             } else {
                 // find matching desktop menu item and click it
