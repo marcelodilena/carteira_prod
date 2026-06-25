@@ -464,6 +464,15 @@
         .centralized-status { text-align: center; vertical-align: middle; }
         .centralized-status div { display: inline-block; }
 
+        /* Carteira Diversos — colunas de data compactas */
+        #tbl-diversos td:nth-child(n+6):nth-child(-n+13),
+        #tbl-diversos th:nth-child(n+6):nth-child(-n+13) {
+            padding-left: 0.45rem;
+            padding-right: 0.45rem;
+            font-size: 0.72rem;
+            white-space: nowrap;
+        }
+
         /* --- MODAL --- */
         .modal-overlay {
             position: fixed; inset: 0;
@@ -1664,16 +1673,16 @@
                                     <th>Peça</th>
                                     <th>Descrição</th>
                                     <th style="text-align:center">Qtd.</th>
-                                    <th>Prazo Contratual</th>
-                                    <th>Fund.Prev. Desb.</th>
-                                    <th>Fund.Real Desb.</th>
-                                    <th>Usin.Prev. Desb.</th>
-                                    <th>Usin.Real Desb.</th>
-                                    <th>Fund.Prev. Acab.</th>
-                                    <th>Usin.Prev. Acab.</th>
-                                    <th>Usin.Real Acab.</th>
+                                    <th style="width:88px">Prazo Contratual</th>
+                                    <th style="width:80px">Fund.Prev. Desb.</th>
+                                    <th style="width:80px">Fund.Real Desb.</th>
+                                    <th style="width:80px">Usin.Prev. Desb.</th>
+                                    <th style="width:80px">Usin.Real Desb.</th>
+                                    <th style="width:80px">Fund.Prev. Acab.</th>
+                                    <th style="width:80px">Usin.Prev. Acab.</th>
+                                    <th style="width:80px">Usin.Real Acab.</th>
                                     <th>Status Usin.</th>
-                                    <th>Recurso Orçado</th>
+                                    <th style="width:220px">Recurso Orçado</th>
                                     <th>Obs.</th>
                                 </tr>
                                 <tr class="filter-row">
