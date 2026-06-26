@@ -1435,6 +1435,8 @@
                 return;
             }
 
+            atualizarCardsFiltrados(linhas);
+
             linhas.forEach(item => {
                 const vf = item.valoresFormatados;
                 let alertaHTML = vf.atrasadoVisual
@@ -1520,6 +1522,20 @@
         }
         function fecharModalObservacao(evento) {
             if (evento.target.id==='modal-observacao') document.getElementById('modal-observacao').classList.remove('active');
+        }
+
+        
+        function atualizarCardsFiltrados(lista) {
+            const totais = {total: lista.length, liberadas:0, processo:0, finalizadas:0, expedidos:0, atrasos:0, proximas:0};
+            lista.forEach(item => {
+                Object.keys(totais).forEach(k => {
+                    if (k !== 'total' && item.filtros && item.filtros[k]) totais[k]++;
+                });
+            });
+            Object.keys(totais).forEach(tipo => {
+                const card = document.querySelector('.status-card.' + tipo + ' .card-value');
+                if (card) card.textContent = totais[tipo];
+            });
         }
 
         function filtrarTabelaPorCard(tipoFiltro, elementoCard) {
