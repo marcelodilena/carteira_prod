@@ -464,6 +464,14 @@
         .centralized-status { text-align: center; vertical-align: middle; }
         .centralized-status div { display: inline-block; }
 
+        
+        .recurso-camisa s,
+        .recurso-camisa strike {
+            color: var(--text-3);
+            opacity: 0.6;
+        }
+        .recurso-camisa { line-height: 1.5; }
+
         /* --- MODAL --- */
         .modal-overlay {
             position: fixed; inset: 0;
@@ -928,7 +936,7 @@
                 if (!response.ok) throw new Error(`Arquivo não encontrado (HTTP ${response.status})`);
 
                 const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true });
+                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true, cellHTML: true, cellStyles: true });
                 abasPlanilha = {};
                 workbook.SheetNames.forEach(name => {
                     abasPlanilha[normalizarTextoParaFiltro(name)] = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: "" });
@@ -1906,5 +1914,12 @@
         }
 
     </script>
+
+<!-- ALTERAÇÃO SUGERIDA:
+Para exibir o tachado exatamente como está no Excel, a leitura da coluna
+'Recurso Usinagem Camisa' deve utilizar o HTML da célula (cell.h).
+A estrutura base já foi preparada neste arquivo (cellHTML/cellStyles habilitados).
+-->
+
 </body>
 </html>
