@@ -1049,10 +1049,11 @@
                 const b = abasPlanilha[normalizarTextoParaFiltro("BAGACEIRAS")] || [];
                 const p = abasPlanilha[normalizarTextoParaFiltro("PENTES")] || [];
                 const r = abasPlanilha[normalizarTextoParaFiltro("RODETES NOVOS")] || [];
-                const c = abasPlanilha[normalizarTextoParaFiltro("CAMISA")] || [];
-                const e = abasPlanilha[normalizarTextoParaFiltro("EIXOS")] || [];
+                const ce = abasPlanilha[normalizarTextoParaFiltro("CAMISA e EIXO")] || [];
                 const f = abasPlanilha[normalizarTextoParaFiltro("PERIFÉRICOS")] || [];
-                dadosLinhasBrutas = [...b,...p,...r,...c,...e,...f];
+                dadosLinhasBrutas = [...b,...p,...r,...ce,...f];
+            } else if (tipoProduto === "CAMISA") {
+                dadosLinhasBrutas = abasPlanilha[normalizarTextoParaFiltro("CAMISA e EIXO")] || [];
             } else {
                 dadosLinhasBrutas = abasPlanilha[normalizarTextoParaFiltro(tipoProduto)] || [];
             }
@@ -1093,14 +1094,28 @@
                 const acabam   = String(buscarValor(linha,'Acabam.')||buscarValor(linha,'Acabam Insp.')).trim();
                 const liberacao= String(buscarValor(linha,'Liberação')).trim();
 
+                // Campos específicos CAMISA
+                const bit           = String(buscarValor(linha,'Bit')||buscarValor(linha,'Bit.')||'').trim();
+                const terno         = String(buscarValor(linha,'Terno')||'').trim();
+                const forma         = String(buscarValor(linha,'Forma')||'').trim();
+                const recursoCamisaRaw = String(buscarValor(linha,'Recurso Usinagem\nCamisa')||buscarValor(linha,'Recurso Usinagem Camisa')||'').trim();
+                const statusCamisa  = String(buscarValor(linha,'Status\nCamisa')||buscarValor(linha,'Status Camisa')||buscarValor(linha,'Status Usinagem')||'').trim();
+                const nrEixo        = String(buscarValor(linha,'Nº Eixo2')||buscarValor(linha,'Nº Eixo')||'').trim();
+                const pzEntregaCamisaCru = buscarValor(linha,'Prazo\nEntrega\nCamisa')||buscarValor(linha,'Prazo Entrega Camisa')||pzEntregaCru;
+                // Filtrar etapas já riscadas/concluídas: manter somente itens pendentes (não-OK, não-AND)
+                const _etapasPendentes = recursoCamisaRaw.split(/\s*[\/,]\s*/).map(e=>e.trim()).filter(e=>e && !['ok','and','✓'].includes(e.toLowerCase()));
+                const recursoCamisaPendente = _etapasPendentes.join(' / ');
+
                 if (pv.toUpperCase()==='PV'||pv.toUpperCase()==='OS'||pv.toUpperCase()==='O.S.') return;
                 if (!pv && !cliente && !descricao) return;
 
                 total++;
-                let isLiberada   = !['AG FUNDIDO','AG. FUNDIDO','AG FUSÃO','AG. FUSÃO'].includes(statusUsinagem);
-                let isProcesso   = ['EM USINAGEM','USINAGEM LPB','PLAINANDO'].includes(statusUsinagem);
-                let isFinalizada = ['AG COLETAR','AG. COLETAR'].includes(statusUsinagem);
-                let isExpedido   = ['EXPEDIDO','EXPEDIDOS'].includes(statusUsinagem);
+                // Para aba CAMISA usa o status da camisa; demais usam statusUsinagem
+                const _statusRef = (tipoProduto === "CAMISA") ? normalizarTextoParaFiltro(statusCamisa) : statusUsinagem;
+                let isLiberada   = !['AG FUNDIDO','AG. FUNDIDO','AG FUSÃO','AG. FUSÃO'].includes(_statusRef);
+                let isProcesso   = ['EM USINAGEM','USINAGEM LPB','PLAINANDO'].includes(_statusRef);
+                let isFinalizada = ['AG COLETAR','AG. COLETAR'].includes(_statusRef);
+                let isExpedido   = ['EXPEDIDO','EXPEDIDOS'].includes(_statusRef);
                 let isAtrasado=false, isProximaEntrega=false;
 
                 let dataEntregaInfo = formatarDataExcel(pzEntregaCru);
@@ -1122,12 +1137,21 @@
                 if (isProximaEntrega) proximasEntregas++;
 
                 let dataFundidoInfo = formatarDataExcel(pzFundidoCru);
+                let dataEntregaCamisaInfo = formatarDataExcel(pzEntregaCamisaCru);
                 listaOriginalVálida.push({
                     valoresFormatados: { pv,item:itemNum,cliente,peca,seq,descricao,qtd:qtdNum,
                         pzFundidoStr:dataFundidoInfo.stringLegivel,pzEntregaStr:dataEntregaInfo.stringLegivel,
                         pzEntregaObj:dataEntregaInfo.dataObjeto,statusUsinagem:String(statusUsinagemCru).trim(),
                         observacao:observacaoCru,atrasadoVisual:isAtrasado,proximaVisual:isProximaEntrega,
-                        des,plainar,facear,serrar,soldadura,encaixe,furacao,acabam,liberacao },
+                        des,plainar,facear,serrar,soldadura,encaixe,furacao,acabam,liberacao,
+                        // Campos Camisa
+                        bit, terno, forma,
+                        recursoCamisa: recursoCamisaPendente,
+                        statusCamisa: statusCamisa,
+                        nrEixo: nrEixo,
+                        pzEntregaCamisaStr: dataEntregaCamisaInfo.stringLegivel,
+                        pzEntregaCamisaObj: dataEntregaCamisaInfo.dataObjeto,
+                    },
                     filtros: { total:true,liberadas:isLiberada,processo:isProcesso,finalizadas:isFinalizada,expedidos:isExpedido,atrasos:isAtrasado,proximas:isProximaEntrega }
                 });
             });
@@ -1151,7 +1175,12 @@
             }
 
             // Cards
-            const cardDefs = [
+            const cardDefs = tipoProduto === "CAMISA" ? [
+                { tipo:'total',     label:'Total',      valor:total,      icon:'<path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="1"/>' },
+                { tipo:'liberadas', label:'Liberadas',  valor:liberadas,  icon:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>' },
+                { tipo:'expedidos', label:'Expedidos',  valor:expedidos,  icon:'<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>' },
+                { tipo:'atrasos',   label:'Atraso',     valor:atrasos,    icon:'<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>' },
+            ] : [
                 { tipo:'total',      label:'Total',          valor:total,            icon:'<path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="1"/>' },
                 { tipo:'proximas',   label:'Próx. Entregas', valor:proximasEntregas, icon:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>', somente:'CARTEIRA GERAL' },
                 { tipo:'finalizadas',label:'Finalizadas',    valor:finalizadas,      icon:'<polyline points="20 6 9 17 4 12"/>' },
@@ -1188,6 +1217,24 @@
                     <td><select id="filtro-col-qtd" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-pzentrega" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
+            } else if (tipoProduto==="CAMISA") {
+                colspanRestante=3;
+                colunasHTML=`<th>PV</th><th>Cliente</th><th>O.S./Peça</th><th>Descrição</th><th style="text-align:center">Qtde.</th><th style="text-align:center">Bit</th><th style="text-align:center">Terno</th><th style="text-align:center">Forma</th><th>Prazo Fund.</th><th style="text-align:center">Des.</th><th>Recurso Camisa</th><th>Status Camisa</th><th style="text-align:center">Nº Eixo</th><th>Prazo Entrega</th>`;
+                colunasFiltroHTML=`
+                    <td><select id="filtro-col-pv" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-cliente" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-peca" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-desc" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-qtd" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-bit" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-terno" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-forma" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-pzfundido" class="table-filter-select"></select></td>
+                    <td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-recurso-camisa" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-status-camisa" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-nr-eixo" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-pzentrega-camisa" class="table-filter-select"></select></td>`;
             } else if (tipoProduto==="PERIFÉRICOS") {
                 colspanRestante=4;
                 colunasHTML=`<th>PV</th><th>Cliente</th><th>Cód.</th><th>Seq.</th><th>Descrição</th><th style="text-align:center">Qtd.</th><th>Prazo Fundido</th><th>Prazo Entrega</th><th style="text-align:center">Des.</th><th>Status</th>`;
@@ -1243,7 +1290,7 @@
                             <tbody id="tbody-dados-painel"></tbody>
                             <tfoot>
                                 <tr>
-                                    <td id="celula-texto-soma" colspan="${tipoProduto==="CARTEIRA GERAL"?4:5}" style="text-align:right;color:var(--text-2)">SOMA TOTAL DAS PEÇAS:</td>
+                                    <td id="celula-texto-soma" colspan="${tipoProduto==="CARTEIRA GERAL"?4:(tipoProduto==="CAMISA"?4:5)}" style="text-align:right;color:var(--text-2)">SOMA TOTAL DAS PEÇAS:</td>
                                     <td id="celula-soma-total" style="text-align:center;color:var(--accent);font-size:1rem;font-weight:700">0</td>
                                     <td id="celula-espaco-tfoot" colspan="${colspanRestante}"></td>
                                 </tr>
@@ -1277,7 +1324,11 @@
                 {id:'filtro-col-serrar',chave:'serrar'},{id:'filtro-col-soldadura',chave:'soldadura'},
                 {id:'filtro-col-encaixe',chave:'encaixe'},{id:'filtro-col-furacao',chave:'furacao'},
                 {id:'filtro-col-acabam',chave:'acabam'},{id:'filtro-col-liberacao',chave:'liberacao'},
-                {id:'filtro-col-status-geral',chave:'statusUsinagem'}
+                {id:'filtro-col-status-geral',chave:'statusUsinagem'},
+                {id:'filtro-col-bit',chave:'bit'},{id:'filtro-col-terno',chave:'terno'},
+                {id:'filtro-col-forma',chave:'forma'},{id:'filtro-col-recurso-camisa',chave:'recursoCamisa'},
+                {id:'filtro-col-status-camisa',chave:'statusCamisa'},{id:'filtro-col-nr-eixo',chave:'nrEixo'},
+                {id:'filtro-col-pzentrega-camisa',chave:'pzEntregaCamisaStr'}
             ];
             mapa.forEach(m => {
                 const el = document.getElementById(m.id);
@@ -1323,7 +1374,14 @@
                 fFuracao: document.getElementById('filtro-col-furacao')?.value||'',
                 fAcabam:  document.getElementById('filtro-col-acabam')?.value||'',
                 fLiberacao: document.getElementById('filtro-col-liberacao')?.value||'',
-                fStatusGeral: document.getElementById('filtro-col-status-geral')?.value||''
+                fStatusGeral: document.getElementById('filtro-col-status-geral')?.value||'',
+                fBit:        document.getElementById('filtro-col-bit')?.value||'',
+                fTerno:      document.getElementById('filtro-col-terno')?.value||'',
+                fForma:      document.getElementById('filtro-col-forma')?.value||'',
+                fRecursoCamisa: document.getElementById('filtro-col-recurso-camisa')?.value||'',
+                fStatusCamisa: document.getElementById('filtro-col-status-camisa')?.value||'',
+                fNrEixo:     document.getElementById('filtro-col-nr-eixo')?.value||'',
+                fPzEntregaCamisa: document.getElementById('filtro-col-pzentrega-camisa')?.value||''
             };
 
             let soma=0;
@@ -1353,6 +1411,14 @@
                     if (f.fLiberacao && normalizarTextoParaFiltro(vf.liberacao) !== f.fLiberacao) return false;
                 } else if (nomeAbaAtiva==="PENTES"||nomeAbaAtiva==="PERIFÉRICOS") {
                     if (f.fLiberacao && normalizarTextoParaFiltro(vf.statusUsinagem) !== f.fLiberacao) return false;
+                } else if (nomeAbaAtiva==="CAMISA") {
+                    if (f.fBit        && normalizarTextoParaFiltro(vf.bit)           !== f.fBit)           return false;
+                    if (f.fTerno      && normalizarTextoParaFiltro(vf.terno)         !== f.fTerno)         return false;
+                    if (f.fForma      && normalizarTextoParaFiltro(vf.forma)         !== f.fForma)         return false;
+                    if (f.fRecursoCamisa && !normalizarTextoParaFiltro(vf.recursoCamisa).includes(f.fRecursoCamisa)) return false;
+                    if (f.fStatusCamisa  && normalizarTextoParaFiltro(vf.statusCamisa)  !== f.fStatusCamisa)  return false;
+                    if (f.fNrEixo     && normalizarTextoParaFiltro(vf.nrEixo)        !== f.fNrEixo)        return false;
+                    if (f.fPzEntregaCamisa && normalizarTextoParaFiltro(vf.pzEntregaCamisaStr) !== f.fPzEntregaCamisa) return false;
                 }
                 return true;
             });
@@ -1364,7 +1430,7 @@
             if (countEl) countEl.textContent = `${linhas.length} ${linhas.length===1?'item':'itens'}`;
 
             if (linhas.length===0) {
-                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?18:(nomeAbaAtiva==="PENTES"?11:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:16)));
+                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?18:(nomeAbaAtiva==="PENTES"?11:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?15:16))));
                 tbody.innerHTML=`<tr><td colspan="${totalColspan}" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro corresponde aos filtros aplicados.</td></tr>`;
                 return;
             }
@@ -1382,7 +1448,25 @@
                 const tr = document.createElement('tr');
                 const statusBadge = (s) => `<span class="badge-status-usinagem">${s}</span>`;
 
-                if (nomeAbaAtiva==="CARTEIRA GERAL") {
+                if (nomeAbaAtiva==="CAMISA") {
+                    const prazoCor = vf.atrasadoVisual?'#ef4444':vf.proximaVisual?'#fbbf24':'var(--text-1)';
+                    tr.innerHTML=`
+                        <td><b style="color:var(--text-1)">${vf.pv||'—'}</b></td>
+                        <td>${vf.cliente}</td>
+                        <td style="color:var(--text-2)">${vf.peca||'—'}</td>
+                        <td style="color:var(--text-2)">${vf.descricao}</td>
+                        <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
+                        <td style="text-align:center;color:var(--text-2)">${vf.bit||'—'}</td>
+                        <td style="text-align:center;color:var(--text-2)">${vf.terno||'—'}</td>
+                        <td style="text-align:center;color:var(--text-2)">${vf.forma||'—'}</td>
+                        <td style="color:var(--text-2)">${vf.pzFundidoStr||'—'}</td>
+                        <td class="centralized-status">${formatarStatusComIcone(vf.des)}</td>
+                        <td style="color:var(--text-2);font-size:0.75rem">${vf.recursoCamisa||'—'}</td>
+                        <td>${statusBadge(vf.statusCamisa||vf.statusUsinagem)}</td>
+                        <td style="text-align:center;color:var(--text-2)">${vf.nrEixo||'—'}</td>
+                        <td>${alertaHTML}<span style="color:${prazoCor}">${vf.pzEntregaCamisaStr||'—'}</span></td>
+                        <td class="centralized-status">${obsHTML}</td>`;
+                } else if (nomeAbaAtiva==="CARTEIRA GERAL") {
                     tr.innerHTML=`
                         <td><b style="color:var(--text-1)">${vf.pv||'—'}</b></td>
                         <td style="color:var(--text-2)">${vf.item}</td>
