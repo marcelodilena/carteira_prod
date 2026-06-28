@@ -905,9 +905,9 @@
         let listaOriginalVálida = [];
         let filtroCardAtivo = 'total';
         let nomeAbaAtiva = '';
-        // HTML (rich-text) da coluna "Recurso Usinagem Camisa", por índice de linha da aba "CAMISA e EIXO".
-        // Usado para detectar quais etapas já foram riscadas (concluídas) no Excel.
-        let camisaRecursoHTMLPorIndice = [];
+        // Etapas de usinagem da camisa (colunas OP1..OP9), por índice de linha da aba "CAMISA e EIXO".
+        // Cada item é um array de {texto, concluida} — concluida = célula pintada de verde no Excel.
+        let camisaEtapasOPPorIndice = [];
 
         // --- RELÓGIO ---
         function atualizarRelogio() {
@@ -947,15 +947,15 @@
                 const arrayBuffer = await response.arrayBuffer();
                 const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true, cellHTML: true, cellStyles: true });
                 abasPlanilha = {};
-                camisaRecursoHTMLPorIndice = [];
+                camisaEtapasOPPorIndice = [];
                 workbook.SheetNames.forEach(name => {
                     const chaveAba = normalizarTextoParaFiltro(name);
                     // blankrows:true garante que a ordem/índice das linhas retornadas seja sempre
-                    // a mesma da varredura bruta de células abaixo, permitindo alinhar o HTML
-                    // (rich text/tachado) da coluna "Recurso Usinagem Camisa" com cada linha.
+                    // a mesma da varredura bruta de células abaixo, permitindo alinhar as colunas
+                    // OP1..OP9 (e sua cor de preenchimento) com cada linha.
                     abasPlanilha[chaveAba] = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: "", blankrows: true });
                     if (chaveAba === normalizarTextoParaFiltro("CAMISA e EIXO")) {
-                        camisaRecursoHTMLPorIndice = extrairHTMLColuna(workbook.Sheets[name], ['Recurso Usinagem\nCamisa','Recurso Usinagem Camisa']);
+                        camisaEtapasOPPorIndice = extrairEtapasColunasOP(workbook.Sheets[name]);
                     }
                 });
 
@@ -1020,59 +1020,54 @@
             return '';
         }
 
-        // Varre as células brutas de uma aba (sem passar por sheet_to_json) para extrair o HTML
-        // renderizado (cell.h, habilitado via cellHTML:true) de uma coluna específica, mantendo a
-        // mesma ordem de linhas usada por sheet_to_json({blankrows:true}) — necessário porque rich
-        // text (como o tachado de etapas concluídas) não é preservado pelo sheet_to_json comum.
-        function extrairHTMLColuna(sheet, nomesColunaPossiveis) {
+        // Verifica se a cor de preenchimento de uma célula (cell.s, habilitado via cellStyles:true)
+        // corresponde ao verde usado no Excel para marcar uma etapa como concluída.
+        function celulaEstaVerde(cell) {
+            if (!cell || !cell.s) return false;
+            const cores = [cell.s.fgColor, cell.s.bgColor].filter(Boolean);
+            for (const cor of cores) {
+                const rgb = String(cor.rgb || '').toUpperCase();
+                if (!rgb) continue;
+                const hex6 = rgb.length >= 6 ? rgb.slice(-6) : rgb;
+                // Aceita o verde padrão usado na planilha (92D050) e variações próximas de "verde sólido"
+                if (hex6 === '92D050') return true;
+                if (/^[0-9A-F]{6}$/.test(hex6)) {
+                    const r = parseInt(hex6.slice(0,2),16), g = parseInt(hex6.slice(2,4),16), b = parseInt(hex6.slice(4,6),16);
+                    if (g > 140 && g > r + 30 && g > b + 30) return true;
+                }
+            }
+            return false;
+        }
+
+        // Varre as células brutas da aba "CAMISA e EIXO" (sem passar por sheet_to_json) para
+        // localizar as colunas OP1..OP9 (etapas de usinagem da camisa) e, para cada linha,
+        // montar a lista de etapas aplicáveis (célula com texto) marcando como concluída quem
+        // estiver pintada de verde. Mantém a mesma ordem de linhas usada por
+        // sheet_to_json({blankrows:true}) para alinhar corretamente por índice.
+        function extrairEtapasColunasOP(sheet) {
             if (!sheet || !sheet['!ref'] || !window.XLSX) return [];
             const range = XLSX.utils.decode_range(sheet['!ref']);
             const linhaCabecalho = range.s.r;
-            const candidatos = nomesColunaPossiveis.map(n => n.replace(/[\s\.\n\r\/\-]/g,'').toUpperCase());
-            let colIndex = -1;
+            const colunasOP = [];
             for (let c = range.s.c; c <= range.e.c; c++) {
                 const cell = sheet[XLSX.utils.encode_cell({ r: linhaCabecalho, c })];
                 if (!cell) continue;
                 const txtCab = String(cell.v||'').replace(/[\s\.\n\r\/\-]/g,'').toUpperCase();
-                if (candidatos.includes(txtCab)) { colIndex = c; break; }
+                if (/^OP\d+$/.test(txtCab)) colunasOP.push(c);
             }
             const out = [];
-            if (colIndex === -1) return out;
+            if (!colunasOP.length) return out;
             for (let r = linhaCabecalho + 1; r <= range.e.r; r++) {
-                const cell = sheet[XLSX.utils.encode_cell({ r, c: colIndex })];
-                out.push((cell && cell.h) ? cell.h : '');
+                const etapas = [];
+                colunasOP.forEach(c => {
+                    const cell = sheet[XLSX.utils.encode_cell({ r, c })];
+                    const texto = cell && cell.v !== undefined && cell.v !== null ? String(cell.v).trim() : '';
+                    if (!texto) return; // coluna não se aplica a esta peça
+                    etapas.push({ texto, concluida: celulaEstaVerde(cell) });
+                });
+                out.push(etapas);
             }
             return out;
-        }
-
-        // Divide o texto da coluna "Recurso Usinagem Camisa" em etapas individuais e identifica,
-        // a partir do HTML (rich text) da célula, quais etapas já foram riscadas (concluídas) no Excel.
-        // Caso o HTML não esteja disponível, recorre à detecção antiga por palavra-chave (ok/and/✓).
-        function analisarEtapasCamisa(html, textoPlano) {
-            const etapasTexto = String(textoPlano || '').split(/\s*[\/,]\s*/).map(s => s.trim()).filter(Boolean);
-            if (!etapasTexto.length) return [];
-
-            const concluidas = new Set();
-            const temHtmlRiscado = html && /<s[\s>]|<strike[\s>]|line-through/i.test(html);
-
-            if (temHtmlRiscado) {
-                const limparTrecho = (txt) => txt.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim();
-                [...html.matchAll(/<s[^>]*>([\s\S]*?)<\/s>/gi)].forEach(m => {
-                    const t = limparTrecho(m[1]); if (t) concluidas.add(normalizarTextoParaFiltro(t));
-                });
-                [...html.matchAll(/<strike[^>]*>([\s\S]*?)<\/strike>/gi)].forEach(m => {
-                    const t = limparTrecho(m[1]); if (t) concluidas.add(normalizarTextoParaFiltro(t));
-                });
-                [...html.matchAll(/<[a-z]+[^>]*style="[^"]*line-through[^"]*"[^>]*>([\s\S]*?)<\/[a-z]+>/gi)].forEach(m => {
-                    const t = limparTrecho(m[1]); if (t) concluidas.add(normalizarTextoParaFiltro(t));
-                });
-            } else {
-                etapasTexto.forEach(e => { if (['ok','and','✓'].includes(e.toLowerCase())) concluidas.add(normalizarTextoParaFiltro(e)); });
-            }
-
-            return etapasTexto
-                .filter(e => !['OK','AND','✓'].includes(normalizarTextoParaFiltro(e)))
-                .map(e => ({ texto: e, concluida: concluidas.has(normalizarTextoParaFiltro(e)) }));
         }
 
         // Mostra a coluna "Recurso Camisa" igual ao Excel: cada etapa concluída aparece riscada
@@ -1188,14 +1183,13 @@
                 const bit           = String(buscarValor(linha,'Bit')||buscarValor(linha,'Bit.')||'').trim();
                 const terno         = String(buscarValor(linha,'Terno')||'').trim();
                 const forma         = String(buscarValor(linha,'Forma')||'').trim();
-                const recursoCamisaRaw = String(buscarValor(linha,'Recurso Usinagem\nCamisa')||buscarValor(linha,'Recurso Usinagem Camisa')||'').trim();
                 const statusCamisa  = String(buscarValor(linha,'Status\nCamisa')||buscarValor(linha,'Status Camisa')||buscarValor(linha,'Status Usinagem')||'').trim();
                 const nrEixo        = String(buscarValor(linha,'Nº Eixo2')||buscarValor(linha,'Nº Eixo')||'').trim();
                 const pzEntregaCamisaCru = buscarValor(linha,'Prazo\nEntrega\nCamisa')||buscarValor(linha,'Prazo Entrega Camisa')||pzEntregaCru;
-                // Identifica, a partir do tachado aplicado no Excel (HTML rich text da célula),
-                // quais etapas de usinagem da camisa já foram concluídas.
-                const recursoCamisaHTML = (tipoProduto === "CAMISA") ? (camisaRecursoHTMLPorIndice[idxLinha] || '') : '';
-                const etapasCamisa = analisarEtapasCamisa(recursoCamisaHTML, recursoCamisaRaw);
+                // Etapas de usinagem da camisa (colunas OP1..OP9): concluída = célula pintada de
+                // verde no Excel. Cada linha já vem pronta (array de {texto, concluida}) a partir
+                // da varredura feita em extrairEtapasColunasOP no carregamento da planilha.
+                const etapasCamisa = (tipoProduto === "CAMISA") ? (camisaEtapasOPPorIndice[idxLinha] || []) : [];
                 // Mantido para compatibilidade com a busca em texto livre (mostra só as etapas pendentes)
                 const recursoCamisaPendente = etapasCamisa.filter(e=>!e.concluida).map(e=>e.texto).join(' / ');
 
@@ -2014,10 +2008,10 @@
 
     </script>
 
-<!-- IMPLEMENTADO: a coluna 'Recurso Usinagem Camisa' agora lê o HTML da célula (cell.h)
-para detectar etapas tachadas/concluídas no Excel e exibi-las com o mesmo tachado (<s>)
-diretamente na coluna "Recurso Camisa" da aba CAMISA (ver extrairHTMLColuna/
-analisarEtapasCamisa/renderEtapasCamisa no script acima). -->
+<!-- IMPLEMENTADO: a coluna "Recurso Camisa" agora lê as colunas OP1..OP9 da planilha
+(cada uma representa uma etapa de usinagem) e usa a cor de preenchimento da célula
+(verde = concluída) para exibir cada etapa com tachado quando já realizada
+(ver extrairEtapasColunasOP/celulaEstaVerde/renderEtapasCamisa no script acima). -->
 
 </body>
 </html>
