@@ -700,11 +700,58 @@
             .section-header h3 { font-size: 0.72rem; }
 
             /* Tabela: scroll horizontal com toque */
-            .table-wrapper { -webkit-overflow-scrolling: touch; }
-            .data-table td, .data-table thead th { padding: 0.5rem 0.65rem; font-size: 0.72rem; }
+            .table-wrapper { -webkit-overflow-scrolling: touch; position: relative; }
+            .data-table td, .data-table thead th { padding: 0.55rem 0.6rem; font-size: 0.74rem; }
+
+            /* Primeira coluna fixa (sticky) para manter referência (PV/Cliente) ao
+               arrastar a tabela para o lado — facilita muito a leitura no celular. */
+            .data-table thead th:first-child,
+            .data-table td:first-child {
+                position: sticky;
+                left: 0;
+                z-index: 5;
+                background: var(--surface-2);
+                box-shadow: 2px 0 6px rgba(0,0,0,0.35);
+            }
+            .data-table thead th:first-child { z-index: 11; }
+            .data-table tr:nth-child(even) td:first-child { background: #1e2535; }
+            .data-table tr:hover td:first-child { background: var(--surface-2); }
+
+            /* Aviso de scroll horizontal — some sozinho assim que o usuário arrasta */
+            .scroll-hint-mobile {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.4rem;
+                font-size: 0.68rem;
+                color: var(--text-2);
+                background: var(--surface-2);
+                border-bottom: 1px solid var(--border);
+                padding: 0.4rem 0.5rem;
+                transition: opacity 0.25s;
+            }
+            .scroll-hint-mobile.hide { display: none; }
+
+            /* Campos de filtro: fonte mínima 16px evita zoom automático do iOS e
+               aumenta a área de toque */
+            .table-filter-input, .table-filter-select {
+                font-size: 0.95rem;
+                padding: 0.5rem 0.45rem;
+                min-height: 38px;
+            }
+
+            /* Botão de observação com área de toque maior */
+            .btn-obs-trigger { padding: 6px 9px; font-size: 1rem; }
+
+            /* Itens do drawer com área de toque maior */
+            .drawer-nav-item { padding: 0.85rem 1.2rem; }
+
+            /* Cards: área de toque confortável */
+            .status-card { min-height: 64px; }
 
             /* Modal em tela cheia no mobile */
             .modal-box { width: 95%; max-width: 95%; margin: 0 auto; }
+            .btn-modal-close { min-height: 42px; padding: 0.6rem 1rem; }
 
             /* Toast menor */
             .toast { left: 12px; right: 12px; top: auto; bottom: 16px; transform: translateY(100px); }
@@ -712,6 +759,13 @@
 
             /* Status screen centralizado */
             .status-msg h3 { font-size: 0.95rem; }
+        }
+
+        /* O aviso de arraste só existe visualmente no mobile; no desktop fica
+           sempre oculto, independente da classe aplicada via JS. */
+        .scroll-hint-mobile { display: none; }
+        @media (max-width: 768px) {
+            .scroll-hint-mobile { display: flex; }
         }
 
         @media (max-width: 380px) {
@@ -1008,6 +1062,29 @@
         function normalizarTextoParaFiltro(txt) {
             return String(txt || '').normalize("NFD").replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
         }
+        // Detecta se a tela atual é de celular (mesmo critério usado no CSS @media)
+        function ehTelaMobile() {
+            return window.matchMedia('(max-width: 768px)').matches;
+        }
+        // Liga o aviso "arraste para o lado" da tabela: só aparece no celular e
+        // some automaticamente assim que o usuário arrasta a tabela uma vez.
+        function ativarAvisoScrollMobile(idWrapper, idAviso) {
+            const wrapper = document.getElementById(idWrapper);
+            const aviso = document.getElementById(idAviso);
+            if (!wrapper || !aviso) return;
+            if (!ehTelaMobile() || wrapper.scrollWidth <= wrapper.clientWidth + 4) {
+                aviso.classList.add('hide');
+                return;
+            }
+            aviso.classList.remove('hide');
+            const esconder = () => { aviso.classList.add('hide'); wrapper.removeEventListener('scroll', esconder); };
+            wrapper.addEventListener('scroll', esconder, { passive: true });
+        }
+        // Reavalia o aviso ao girar a tela / mudar o tamanho da janela
+        window.addEventListener('resize', () => {
+            ativarAvisoScrollMobile('table-wrapper-painel', 'scroll-hint-painel');
+            ativarAvisoScrollMobile('table-wrapper-diversos', 'scroll-hint-diversos');
+        });
         function buscarValor(linha, col) {
             if (!linha) return '';
             const termo = col.replace(/[\s\.\n\r\/\-]/g,'').toUpperCase();
@@ -1375,7 +1452,8 @@
                         <div id="table-dynamic-title" class="table-title-text">Todos os Registros</div>
                         <div id="record-count" class="table-record-count">0 itens</div>
                     </div>
-                    <div class="table-wrapper">
+                    <div class="scroll-hint-mobile" id="scroll-hint-painel">↔ Arraste a tabela para o lado para ver mais colunas</div>
+                    <div class="table-wrapper" id="table-wrapper-painel">
                         <table class="data-table">
                             <thead>
                                 <tr>${colunasHTML}<th style="text-align:center">Obs.</th></tr>
@@ -1404,6 +1482,7 @@
                 el.addEventListener('input', executarFiltrosCombinados);
             });
             executarFiltrosCombinados();
+            ativarAvisoScrollMobile('table-wrapper-painel', 'scroll-hint-painel');
             document.getElementById('statusbar-modulo').textContent = `${tipoProduto}`;
         }
 
@@ -1818,7 +1897,8 @@
                         <div id="div-table-title" class="table-title-text">Todos os Registros</div>
                         <div id="div-record-count" class="table-record-count">${total} itens</div>
                     </div>
-                    <div class="table-wrapper">
+                    <div class="scroll-hint-mobile" id="scroll-hint-diversos">↔ Arraste a tabela para o lado para ver mais colunas</div>
+                    <div class="table-wrapper" id="table-wrapper-diversos">
                         <table class="data-table" id="tbl-diversos">
                             <thead>
                                 <tr>
@@ -1891,6 +1971,7 @@
             });
 
             diversosRenderizar();
+            ativarAvisoScrollMobile('table-wrapper-diversos', 'scroll-hint-diversos');
         }
 
         function diversosFiltrarCard(aba, el) {
