@@ -1158,7 +1158,7 @@
             dadosLinhasBrutas.forEach((linha, idxLinha) => {
                 const pv        = String(buscarValor(linha,'PV')||buscarValor(linha,'O.S.')||buscarValor(linha,'OS')).trim();
                 const cliente   = String(buscarValor(linha,'Cliente')).trim();
-                const peca      = String(buscarValor(linha,'Peça')||buscarValor(linha,'Peca')||buscarValor(linha,'Cód.')||buscarValor(linha,'Cod.')).trim();
+                const peca      = String(buscarValor(linha,'O.S./Peça')||buscarValor(linha,'O.S./Peca')||buscarValor(linha,'OS/Peça')||buscarValor(linha,'Peça')||buscarValor(linha,'Peca')||buscarValor(linha,'Cód.')||buscarValor(linha,'Cod.')).trim();
                 const seq       = String(buscarValor(linha,'Seq')||buscarValor(linha,'Seq.')).trim();
                 const descricao = String(buscarValor(linha,'Descrição')||buscarValor(linha,'Descricao')).trim();
                 const itemNum   = String(buscarValor(linha,'Item')||buscarValor(linha,'Item2')||'-').trim();
