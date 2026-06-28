@@ -472,6 +472,51 @@
         }
         .recurso-camisa { line-height: 1.5; }
 
+        /* --- ETAPAS CAMISA (chips de progresso por etapa de usinagem) --- */
+        .recurso-camisa-wrap { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }
+        .etapas-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+        .etapa-chip {
+            display: inline-block; padding: 1px 7px; border-radius: 999px;
+            font-size: 0.66rem; font-weight: 600; line-height: 1.5; white-space: nowrap;
+            border: 1px solid transparent;
+        }
+        .etapa-chip.etapa-concluida {
+            background: rgba(34,197,94,0.12);
+            color: #4ade80;
+            border-color: rgba(34,197,94,0.25);
+            text-decoration: line-through;
+            opacity: 0.75;
+        }
+        .etapa-chip.etapa-pendente {
+            background: rgba(148,163,184,0.12);
+            color: var(--text-2);
+            border-color: rgba(148,163,184,0.25);
+        }
+        .etapa-progresso {
+            width: 100%; height: 4px; border-radius: 999px;
+            background: rgba(148,163,184,0.18); overflow: hidden;
+        }
+        .etapa-progresso-barra {
+            height: 100%; border-radius: 999px;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            transition: width 0.2s ease;
+        }
+        .etapa-progresso-texto { font-size: 0.62rem; color: var(--text-3); }
+        .badge-etapa-atual-camisa {
+            display: inline-block; padding: 2px 8px; border-radius: 4px;
+            font-size: 0.68rem; font-weight: 600; white-space: nowrap;
+        }
+        .badge-etapa-atual-camisa.etapa-atual-pendente {
+            background: rgba(251,191,36,0.14);
+            color: #fbbf24;
+            border: 1px solid rgba(251,191,36,0.3);
+        }
+        .badge-etapa-atual-camisa.etapa-atual-concluido {
+            background: rgba(34,197,94,0.14);
+            color: #4ade80;
+            border: 1px solid rgba(34,197,94,0.3);
+        }
+
         /* --- MODAL --- */
         .modal-overlay {
             position: fixed; inset: 0;
@@ -899,6 +944,9 @@
         let listaOriginalVálida = [];
         let filtroCardAtivo = 'total';
         let nomeAbaAtiva = '';
+        // HTML (rich-text) da coluna "Recurso Usinagem Camisa", por índice de linha da aba "CAMISA e EIXO".
+        // Usado para detectar quais etapas já foram riscadas (concluídas) no Excel.
+        let camisaRecursoHTMLPorIndice = [];
 
         // --- RELÓGIO ---
         function atualizarRelogio() {
@@ -938,8 +986,16 @@
                 const arrayBuffer = await response.arrayBuffer();
                 const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellDates: true, cellHTML: true, cellStyles: true });
                 abasPlanilha = {};
+                camisaRecursoHTMLPorIndice = [];
                 workbook.SheetNames.forEach(name => {
-                    abasPlanilha[normalizarTextoParaFiltro(name)] = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: "" });
+                    const chaveAba = normalizarTextoParaFiltro(name);
+                    // blankrows:true garante que a ordem/índice das linhas retornadas seja sempre
+                    // a mesma da varredura bruta de células abaixo, permitindo alinhar o HTML
+                    // (rich text/tachado) da coluna "Recurso Usinagem Camisa" com cada linha.
+                    abasPlanilha[chaveAba] = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: "", blankrows: true });
+                    if (chaveAba === normalizarTextoParaFiltro("CAMISA e EIXO")) {
+                        camisaRecursoHTMLPorIndice = extrairHTMLColuna(workbook.Sheets[name], ['Recurso Usinagem\nCamisa','Recurso Usinagem Camisa']);
+                    }
                 });
 
                 document.getElementById('sub-navigation-strip').classList.remove('hidden-initially');
@@ -1001,6 +1057,84 @@
                 }
             }
             return '';
+        }
+
+        // Varre as células brutas de uma aba (sem passar por sheet_to_json) para extrair o HTML
+        // renderizado (cell.h, habilitado via cellHTML:true) de uma coluna específica, mantendo a
+        // mesma ordem de linhas usada por sheet_to_json({blankrows:true}) — necessário porque rich
+        // text (como o tachado de etapas concluídas) não é preservado pelo sheet_to_json comum.
+        function extrairHTMLColuna(sheet, nomesColunaPossiveis) {
+            if (!sheet || !sheet['!ref'] || !window.XLSX) return [];
+            const range = XLSX.utils.decode_range(sheet['!ref']);
+            const linhaCabecalho = range.s.r;
+            const candidatos = nomesColunaPossiveis.map(n => n.replace(/[\s\.\n\r\/\-]/g,'').toUpperCase());
+            let colIndex = -1;
+            for (let c = range.s.c; c <= range.e.c; c++) {
+                const cell = sheet[XLSX.utils.encode_cell({ r: linhaCabecalho, c })];
+                if (!cell) continue;
+                const txtCab = String(cell.v||'').replace(/[\s\.\n\r\/\-]/g,'').toUpperCase();
+                if (candidatos.includes(txtCab)) { colIndex = c; break; }
+            }
+            const out = [];
+            if (colIndex === -1) return out;
+            for (let r = linhaCabecalho + 1; r <= range.e.r; r++) {
+                const cell = sheet[XLSX.utils.encode_cell({ r, c: colIndex })];
+                out.push((cell && cell.h) ? cell.h : '');
+            }
+            return out;
+        }
+
+        // Divide o texto da coluna "Recurso Usinagem Camisa" em etapas individuais e identifica,
+        // a partir do HTML (rich text) da célula, quais etapas já foram riscadas (concluídas) no Excel.
+        // Caso o HTML não esteja disponível, recorre à detecção antiga por palavra-chave (ok/and/✓).
+        function analisarEtapasCamisa(html, textoPlano) {
+            const etapasTexto = String(textoPlano || '').split(/\s*[\/,]\s*/).map(s => s.trim()).filter(Boolean);
+            if (!etapasTexto.length) return [];
+
+            const concluidas = new Set();
+            const temHtmlRiscado = html && /<s[\s>]|<strike[\s>]|line-through/i.test(html);
+
+            if (temHtmlRiscado) {
+                const limparTrecho = (txt) => txt.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim();
+                [...html.matchAll(/<s[^>]*>([\s\S]*?)<\/s>/gi)].forEach(m => {
+                    const t = limparTrecho(m[1]); if (t) concluidas.add(normalizarTextoParaFiltro(t));
+                });
+                [...html.matchAll(/<strike[^>]*>([\s\S]*?)<\/strike>/gi)].forEach(m => {
+                    const t = limparTrecho(m[1]); if (t) concluidas.add(normalizarTextoParaFiltro(t));
+                });
+                [...html.matchAll(/<[a-z]+[^>]*style="[^"]*line-through[^"]*"[^>]*>([\s\S]*?)<\/[a-z]+>/gi)].forEach(m => {
+                    const t = limparTrecho(m[1]); if (t) concluidas.add(normalizarTextoParaFiltro(t));
+                });
+            } else {
+                etapasTexto.forEach(e => { if (['ok','and','✓'].includes(e.toLowerCase())) concluidas.add(normalizarTextoParaFiltro(e)); });
+            }
+
+            return etapasTexto
+                .filter(e => !['OK','AND','✓'].includes(normalizarTextoParaFiltro(e)))
+                .map(e => ({ texto: e, concluida: concluidas.has(normalizarTextoParaFiltro(e)) }));
+        }
+
+        // Monta os "chips" visuais de cada etapa (riscado/esmaecido = concluída) + barra de progresso.
+        function renderEtapasCamisa(etapas) {
+            if (!etapas || !etapas.length) return '<span style="color:var(--text-3)">—</span>';
+            const chips = etapas.map(e => `<span class="etapa-chip ${e.concluida ? 'etapa-concluida' : 'etapa-pendente'}">${e.texto}</span>`).join('');
+            const totalEtapas = etapas.length;
+            const concluidasN = etapas.filter(e => e.concluida).length;
+            const pct = totalEtapas ? Math.round((concluidasN / totalEtapas) * 100) : 0;
+            return `<div class="recurso-camisa-wrap">
+                <div class="etapas-chips">${chips}</div>
+                <div class="etapa-progresso"><div class="etapa-progresso-barra" style="width:${pct}%"></div></div>
+                <div class="etapa-progresso-texto">${concluidasN}/${totalEtapas} etapas concluídas</div>
+            </div>`;
+        }
+
+        // Badge da etapa atual (próxima etapa pendente, ou "Concluído" quando todas já foram riscadas).
+        function renderEtapaAtualBadge(etapaAtual) {
+            if (!etapaAtual) return '<span style="color:var(--text-3)">—</span>';
+            if (etapaAtual === 'Concluído') {
+                return `<span class="badge-etapa-atual-camisa etapa-atual-concluido">✓ Concluído</span>`;
+            }
+            return `<span class="badge-etapa-atual-camisa etapa-atual-pendente">${etapaAtual}</span>`;
         }
         function formatarStatusComIcone(val) {
             const limpo = String(val||'').trim().toUpperCase().replace(/[\.\s]/g,'');
@@ -1078,7 +1212,7 @@
             const hoje = new Date();
             hoje.setHours(0,0,0,0);
 
-            dadosLinhasBrutas.forEach(linha => {
+            dadosLinhasBrutas.forEach((linha, idxLinha) => {
                 const pv        = String(buscarValor(linha,'PV')||buscarValor(linha,'O.S.')||buscarValor(linha,'OS')).trim();
                 const cliente   = String(buscarValor(linha,'Cliente')).trim();
                 const peca      = String(buscarValor(linha,'Peça')||buscarValor(linha,'Peca')||buscarValor(linha,'Cód.')||buscarValor(linha,'Cod.')).trim();
@@ -1110,9 +1244,14 @@
                 const statusCamisa  = String(buscarValor(linha,'Status\nCamisa')||buscarValor(linha,'Status Camisa')||buscarValor(linha,'Status Usinagem')||'').trim();
                 const nrEixo        = String(buscarValor(linha,'Nº Eixo2')||buscarValor(linha,'Nº Eixo')||'').trim();
                 const pzEntregaCamisaCru = buscarValor(linha,'Prazo\nEntrega\nCamisa')||buscarValor(linha,'Prazo Entrega Camisa')||pzEntregaCru;
-                // Filtrar etapas já riscadas/concluídas: manter somente itens pendentes (não-OK, não-AND)
-                const _etapasPendentes = recursoCamisaRaw.split(/\s*[\/,]\s*/).map(e=>e.trim()).filter(e=>e && !['ok','and','✓'].includes(e.toLowerCase()));
-                const recursoCamisaPendente = _etapasPendentes.join(' / ');
+                // Identifica, a partir do tachado aplicado no Excel (HTML rich text da célula),
+                // quais etapas de usinagem da camisa já foram concluídas.
+                const recursoCamisaHTML = (tipoProduto === "CAMISA") ? (camisaRecursoHTMLPorIndice[idxLinha] || '') : '';
+                const etapasCamisa = analisarEtapasCamisa(recursoCamisaHTML, recursoCamisaRaw);
+                const etapaPendenteObj = etapasCamisa.find(e => !e.concluida);
+                const etapaAtualCamisa = etapasCamisa.length ? (etapaPendenteObj ? etapaPendenteObj.texto : 'Concluído') : '';
+                // Mantido para compatibilidade com a busca em texto livre (mostra só as etapas pendentes)
+                const recursoCamisaPendente = etapasCamisa.filter(e=>!e.concluida).map(e=>e.texto).join(' / ');
 
                 if (pv.toUpperCase()==='PV'||pv.toUpperCase()==='OS'||pv.toUpperCase()==='O.S.') return;
                 if (!pv && !cliente && !descricao) return;
@@ -1161,6 +1300,8 @@
                         // Campos Camisa
                         bit, terno, forma,
                         recursoCamisa: recursoCamisaPendente,
+                        etapasCamisa: etapasCamisa,
+                        etapaAtualCamisa: etapaAtualCamisa,
                         statusCamisa: statusCamisa,
                         nrEixo: nrEixo,
                         pzEntregaCamisaStr: dataEntregaCamisaInfo.stringLegivel,
@@ -1232,8 +1373,8 @@
                     <td><select id="filtro-col-pzentrega" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
             } else if (tipoProduto==="CAMISA") {
-                colspanRestante=3;
-                colunasHTML=`<th>PV</th><th>Cliente</th><th>O.S./Peça</th><th>Descrição</th><th style="text-align:center">Qtde.</th><th style="text-align:center">Bit</th><th style="text-align:center">Terno</th><th style="text-align:center">Forma</th><th>Prazo Fund.</th><th style="text-align:center">Des.</th><th>Recurso Camisa</th><th>Status Camisa</th><th style="text-align:center">Nº Eixo</th><th>Prazo Entrega</th>`;
+                colspanRestante=4;
+                colunasHTML=`<th>PV</th><th>Cliente</th><th>O.S./Peça</th><th>Descrição</th><th style="text-align:center">Qtde.</th><th style="text-align:center">Bit</th><th style="text-align:center">Terno</th><th style="text-align:center">Forma</th><th>Prazo Fund.</th><th style="text-align:center">Des.</th><th>Recurso Camisa</th><th>Etapa Atual</th><th>Status Camisa</th><th style="text-align:center">Nº Eixo</th><th>Prazo Entrega</th>`;
                 colunasFiltroHTML=`
                     <td><select id="filtro-col-pv" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-cliente" class="table-filter-select"></select></td>
@@ -1245,7 +1386,8 @@
                     <td><select id="filtro-col-forma" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-pzfundido" class="table-filter-select"></select></td>
                     <td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-recurso-camisa" class="table-filter-select"></select></td>
+                    <td><input type="text" id="filtro-col-recurso-camisa" class="table-filter-input" placeholder="Buscar etapa..."></td>
+                    <td><select id="filtro-col-etapa-atual-camisa" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-status-camisa" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-nr-eixo" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-pzentrega-camisa" class="table-filter-select"></select></td>`;
@@ -1340,7 +1482,8 @@
                 {id:'filtro-col-acabam',chave:'acabam'},{id:'filtro-col-liberacao',chave:'liberacao'},
                 {id:'filtro-col-status-geral',chave:'statusUsinagem'},
                 {id:'filtro-col-bit',chave:'bit'},{id:'filtro-col-terno',chave:'terno'},
-                {id:'filtro-col-forma',chave:'forma'},{id:'filtro-col-recurso-camisa',chave:'recursoCamisa'},
+                {id:'filtro-col-forma',chave:'forma'},
+                {id:'filtro-col-etapa-atual-camisa',chave:'etapaAtualCamisa'},
                 {id:'filtro-col-status-camisa',chave:'statusCamisa'},{id:'filtro-col-nr-eixo',chave:'nrEixo'},
                 {id:'filtro-col-pzentrega-camisa',chave:'pzEntregaCamisaStr'}
             ];
@@ -1392,7 +1535,8 @@
                 fBit:        document.getElementById('filtro-col-bit')?.value||'',
                 fTerno:      document.getElementById('filtro-col-terno')?.value||'',
                 fForma:      document.getElementById('filtro-col-forma')?.value||'',
-                fRecursoCamisa: document.getElementById('filtro-col-recurso-camisa')?.value||'',
+                fRecursoCamisa: normalizarTextoParaFiltro(document.getElementById('filtro-col-recurso-camisa')?.value||''),
+                fEtapaAtualCamisa: document.getElementById('filtro-col-etapa-atual-camisa')?.value||'',
                 fStatusCamisa: document.getElementById('filtro-col-status-camisa')?.value||'',
                 fNrEixo:     document.getElementById('filtro-col-nr-eixo')?.value||'',
                 fPzEntregaCamisa: document.getElementById('filtro-col-pzentrega-camisa')?.value||''
@@ -1430,6 +1574,7 @@
                     if (f.fTerno      && normalizarTextoParaFiltro(vf.terno)         !== f.fTerno)         return false;
                     if (f.fForma      && normalizarTextoParaFiltro(vf.forma)         !== f.fForma)         return false;
                     if (f.fRecursoCamisa && !normalizarTextoParaFiltro(vf.recursoCamisa).includes(f.fRecursoCamisa)) return false;
+                    if (f.fEtapaAtualCamisa && normalizarTextoParaFiltro(vf.etapaAtualCamisa) !== f.fEtapaAtualCamisa) return false;
                     if (f.fStatusCamisa  && normalizarTextoParaFiltro(vf.statusCamisa)  !== f.fStatusCamisa)  return false;
                     if (f.fNrEixo     && normalizarTextoParaFiltro(vf.nrEixo)        !== f.fNrEixo)        return false;
                     if (f.fPzEntregaCamisa && normalizarTextoParaFiltro(vf.pzEntregaCamisaStr) !== f.fPzEntregaCamisa) return false;
@@ -1453,7 +1598,7 @@
             atualizarCardsFiltrados(linhasFiltrosColuna);
 
             if (linhas.length===0) {
-                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?18:(nomeAbaAtiva==="PENTES"?11:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?15:16))));
+                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?18:(nomeAbaAtiva==="PENTES"?11:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?16:16))));
                 tbody.innerHTML=`<tr><td colspan="${totalColspan}" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro corresponde aos filtros aplicados.</td></tr>`;
                 return;
             }
@@ -1484,7 +1629,8 @@
                         <td style="text-align:center;color:var(--text-2)">${vf.forma||'—'}</td>
                         <td style="color:var(--text-2)">${vf.pzFundidoStr||'—'}</td>
                         <td class="centralized-status">${formatarStatusComIcone(vf.des)}</td>
-                        <td style="color:var(--text-2);font-size:0.75rem">${vf.recursoCamisa||'—'}</td>
+                        <td style="font-size:0.75rem">${renderEtapasCamisa(vf.etapasCamisa)}</td>
+                        <td>${renderEtapaAtualBadge(vf.etapaAtualCamisa)}</td>
                         <td>${statusBadge(vf.statusCamisa||vf.statusUsinagem)}</td>
                         <td style="text-align:center;color:var(--text-2)">${vf.nrEixo||'—'}</td>
                         <td>${alertaHTML}<span style="color:${prazoCor}">${vf.pzEntregaCamisaStr||'—'}</span></td>
@@ -1928,11 +2074,10 @@
 
     </script>
 
-<!-- ALTERAÇÃO SUGERIDA:
-Para exibir o tachado exatamente como está no Excel, a leitura da coluna
-'Recurso Usinagem Camisa' deve utilizar o HTML da célula (cell.h).
-A estrutura base já foi preparada neste arquivo (cellHTML/cellStyles habilitados).
--->
+<!-- IMPLEMENTADO: a coluna 'Recurso Usinagem Camisa' agora lê o HTML da célula (cell.h)
+para detectar etapas tachadas/concluídas no Excel e exibi-las como chips de progresso
++ badge de "Etapa Atual" na aba CAMISA (ver extrairHTMLColuna/analisarEtapasCamisa/
+renderEtapasCamisa/renderEtapaAtualBadge no script acima). -->
 
 </body>
 </html>
