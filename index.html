@@ -1120,7 +1120,13 @@
                 total++;
                 // Para aba CAMISA usa o status da camisa; demais usam statusUsinagem
                 const _statusRef = (tipoProduto === "CAMISA") ? normalizarTextoParaFiltro(statusCamisa) : statusUsinagem;
-                let isLiberada   = !['AG FUNDIDO','AG. FUNDIDO','AG FUSÃO','AG. FUSÃO'].includes(_statusRef);
+                let isLiberada;
+                if (tipoProduto === "CAMISA") {
+                    // Camisa só é considerada liberada quando o status for "Ag. Eixo" ou "Ag. Coletar"
+                    isLiberada = ['AG EIXO','AG. EIXO','AG COLETAR','AG. COLETAR'].includes(_statusRef);
+                } else {
+                    isLiberada = !['AG FUNDIDO','AG. FUNDIDO','AG FUSÃO','AG. FUSÃO'].includes(_statusRef);
+                }
                 let isProcesso   = ['EM USINAGEM','USINAGEM LPB','PLAINANDO'].includes(_statusRef);
                 let isFinalizada = ['AG COLETAR','AG. COLETAR'].includes(_statusRef);
                 let isExpedido   = ['EXPEDIDO','EXPEDIDOS'].includes(_statusRef);
@@ -1392,9 +1398,9 @@
                 fPzEntregaCamisa: document.getElementById('filtro-col-pzentrega-camisa')?.value||''
             };
 
-            let soma=0;
-            const linhas = listaOriginalVálida.filter(item => {
-                if (!item.filtros[filtroCardAtivo]) return false;
+            // Filtros de coluna (sem considerar o card ativo) — usados para manter os
+            // valores dos demais cards estáveis ao trocar o card selecionado.
+            const passaFiltrosColuna = (item) => {
                 const vf = item.valoresFormatados;
                 if (f.fPv      && normalizarTextoParaFiltro(vf.pv)       !== f.fPv)      return false;
                 if (f.fItem    && normalizarTextoParaFiltro(vf.item)      !== f.fItem)    return false;
@@ -1429,21 +1435,28 @@
                     if (f.fPzEntregaCamisa && normalizarTextoParaFiltro(vf.pzEntregaCamisaStr) !== f.fPzEntregaCamisa) return false;
                 }
                 return true;
-            });
+            };
 
+            // Lista considerando somente os filtros de coluna (usada para os cards)
+            const linhasFiltrosColuna = listaOriginalVálida.filter(passaFiltrosColuna);
+            // Lista considerando também o card ativo (usada para a tabela)
+            const linhas = linhasFiltrosColuna.filter(item => item.filtros[filtroCardAtivo]);
+
+            let soma=0;
             linhas.forEach(item => soma += item.valoresFormatados.qtd);
             document.getElementById('celula-soma-total').innerText = soma;
 
             const countEl = document.getElementById('record-count');
             if (countEl) countEl.textContent = `${linhas.length} ${linhas.length===1?'item':'itens'}`;
 
+            // Os cards refletem sempre os filtros de coluna, independente do card selecionado
+            atualizarCardsFiltrados(linhasFiltrosColuna);
+
             if (linhas.length===0) {
                 const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?18:(nomeAbaAtiva==="PENTES"?11:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?15:16))));
                 tbody.innerHTML=`<tr><td colspan="${totalColspan}" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro corresponde aos filtros aplicados.</td></tr>`;
                 return;
             }
-
-            atualizarCardsFiltrados(linhas);
 
             linhas.forEach(item => {
                 const vf = item.valoresFormatados;
