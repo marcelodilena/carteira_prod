@@ -1309,7 +1309,7 @@
                     <td><select id="filtro-col-cliente" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-desc" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-qtd" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-pzentrega" class="table-filter-select"></select></td>
+                    <td><input type="text" id="filtro-col-pzentrega" class="table-filter-input" placeholder="ex: 07/2026"></td>
                     <td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
             } else if (tipoProduto==="CAMISA") {
                 colspanRestante=3;
@@ -1323,12 +1323,12 @@
                     <td><select id="filtro-col-bit" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-terno" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-forma" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-pzfundido" class="table-filter-select"></select></td>
+                    <td><input type="text" id="filtro-col-pzfundido" class="table-filter-input" placeholder="ex: 07/2026"></td>
                     <td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td>
                     <td><input type="text" id="filtro-col-recurso-camisa" class="table-filter-input" placeholder="Buscar etapa..."></td>
                     <td><select id="filtro-col-status-camisa" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-nr-eixo" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-pzentrega-camisa" class="table-filter-select"></select></td>`;
+                    <td><input type="text" id="filtro-col-pzentrega-camisa" class="table-filter-input" placeholder="ex: 07/2026"></td>`;
             } else if (tipoProduto==="PERIFÉRICOS") {
                 colspanRestante=4;
                 colunasHTML=`<th>PV</th><th>Cliente</th><th>Cód.</th><th>Seq.</th><th>Descrição</th><th style="text-align:center">Qtd.</th><th>Prazo Fundido</th><th>Prazo Entrega</th><th style="text-align:center">Des.</th><th>Status</th>`;
@@ -1339,8 +1339,8 @@
                     <td><select id="filtro-col-seq" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-desc" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-qtd" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-pzfundido" class="table-filter-select"></select></td>
-                    <td><select id="filtro-col-pzentrega" class="table-filter-select"></select></td>
+                    <td><input type="text" id="filtro-col-pzfundido" class="table-filter-input" placeholder="ex: 07/2026"></td>
+                    <td><input type="text" id="filtro-col-pzentrega" class="table-filter-input" placeholder="ex: 07/2026"></td>
                     <td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
             } else {
@@ -1359,7 +1359,7 @@
                     adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-plainar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-facear" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-serrar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
                 }
                 colunasHTML=`<th>PV / OS</th><th>Cliente</th><th>Peça</th><th>Seq.</th><th>Descrição</th><th style="text-align:center">Qtde.</th><th>Prazo Fundido</th><th>Prazo Entrega</th>${adicionaisCol}`;
-                colunasFiltroHTML=`<td><select id="filtro-col-pv" class="table-filter-select"></select></td><td><select id="filtro-col-cliente" class="table-filter-select"></select></td><td><select id="filtro-col-peca" class="table-filter-select"></select></td><td><select id="filtro-col-seq" class="table-filter-select"></select></td><td><select id="filtro-col-desc" class="table-filter-select"></select></td><td><select id="filtro-col-qtd" class="table-filter-select"></select></td><td><select id="filtro-col-pzfundido" class="table-filter-select"></select></td><td><select id="filtro-col-pzentrega" class="table-filter-select"></select></td>${adicionaisFiltro}`;
+                colunasFiltroHTML=`<td><select id="filtro-col-pv" class="table-filter-select"></select></td><td><select id="filtro-col-cliente" class="table-filter-select"></select></td><td><select id="filtro-col-peca" class="table-filter-select"></select></td><td><select id="filtro-col-seq" class="table-filter-select"></select></td><td><select id="filtro-col-desc" class="table-filter-select"></select></td><td><select id="filtro-col-qtd" class="table-filter-select"></select></td><td><input type="text" id="filtro-col-pzfundido" class="table-filter-input" placeholder="ex: 07/2026"></td><td><input type="text" id="filtro-col-pzentrega" class="table-filter-input" placeholder="ex: 07/2026"></td>${adicionaisFiltro}`;
             }
 
             areaDestino.innerHTML = `
@@ -1456,8 +1456,8 @@
                 fSeq:     document.getElementById('filtro-col-seq')?.value||'',
                 fDesc:    document.getElementById('filtro-col-desc')?.value||'',
                 fQtd:     document.getElementById('filtro-col-qtd')?.value||'',
-                fPzFundido:  document.getElementById('filtro-col-pzfundido')?.value||'',
-                fPzEntrega:  document.getElementById('filtro-col-pzentrega')?.value||'',
+                fPzFundido:  normalizarTextoParaFiltro(document.getElementById('filtro-col-pzfundido')?.value||''),
+                fPzEntrega:  normalizarTextoParaFiltro(document.getElementById('filtro-col-pzentrega')?.value||''),
                 fObs:     normalizarTextoParaFiltro(document.getElementById('filtro-col-obs')?.value||''),
                 fDes:     document.getElementById('filtro-col-des')?.value||'',
                 fPlainar: document.getElementById('filtro-col-plainar')?.value||'',
@@ -1475,7 +1475,7 @@
                 fRecursoCamisa: normalizarTextoParaFiltro(document.getElementById('filtro-col-recurso-camisa')?.value||''),
                 fStatusCamisa: document.getElementById('filtro-col-status-camisa')?.value||'',
                 fNrEixo:     document.getElementById('filtro-col-nr-eixo')?.value||'',
-                fPzEntregaCamisa: document.getElementById('filtro-col-pzentrega-camisa')?.value||''
+                fPzEntregaCamisa: normalizarTextoParaFiltro(document.getElementById('filtro-col-pzentrega-camisa')?.value||'')
             };
 
             // Filtros de coluna (sem considerar o card ativo) — usados para manter os
@@ -1489,8 +1489,8 @@
                 if (f.fSeq     && normalizarTextoParaFiltro(vf.seq)       !== f.fSeq)     return false;
                 if (f.fDesc    && normalizarTextoParaFiltro(vf.descricao) !== f.fDesc)    return false;
                 if (f.fQtd     && normalizarTextoParaFiltro(String(vf.qtd)) !== f.fQtd)  return false;
-                if (f.fPzFundido && normalizarTextoParaFiltro(vf.pzFundidoStr) !== f.fPzFundido) return false;
-                if (f.fPzEntrega && normalizarTextoParaFiltro(vf.pzEntregaStr) !== f.fPzEntrega) return false;
+                if (f.fPzFundido && !normalizarTextoParaFiltro(vf.pzFundidoStr).includes(f.fPzFundido)) return false;
+                if (f.fPzEntrega && !normalizarTextoParaFiltro(vf.pzEntregaStr).includes(f.fPzEntrega)) return false;
                 if (f.fObs     && !normalizarTextoParaFiltro(vf.observacao).includes(f.fObs)) return false;
                 if (f.fDes     && normalizarTextoParaFiltro(vf.des)       !== f.fDes)     return false;
                 if (f.fPlainar && normalizarTextoParaFiltro(vf.plainar)   !== f.fPlainar) return false;
@@ -1512,7 +1512,7 @@
                     if (f.fRecursoCamisa && !normalizarTextoParaFiltro(vf.recursoCamisa).includes(f.fRecursoCamisa)) return false;
                     if (f.fStatusCamisa  && normalizarTextoParaFiltro(vf.statusCamisa)  !== f.fStatusCamisa)  return false;
                     if (f.fNrEixo     && normalizarTextoParaFiltro(vf.nrEixo)        !== f.fNrEixo)        return false;
-                    if (f.fPzEntregaCamisa && normalizarTextoParaFiltro(vf.pzEntregaCamisaStr) !== f.fPzEntregaCamisa) return false;
+                    if (f.fPzEntregaCamisa && !normalizarTextoParaFiltro(vf.pzEntregaCamisaStr).includes(f.fPzEntregaCamisa)) return false;
                 }
                 return true;
             };
