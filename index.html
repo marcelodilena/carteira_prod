@@ -1290,14 +1290,26 @@
                 let isExpedido   = ['EXPEDIDO','EXPEDIDOS'].includes(_statusRef);
                 let isAtrasado=false, isProximaEntrega=false;
 
+                let dataEntregaCamisaInfo = formatarDataExcel(pzEntregaCamisaCru);
                 let dataEntregaInfo = formatarDataExcel(pzEntregaCru);
-                if (dataEntregaInfo.dataObjeto instanceof Date) {
-                    const dpe = new Date(dataEntregaInfo.dataObjeto);
-                    dpe.setHours(0,0,0,0);
-                    const diff = Math.ceil((dpe - hoje)/(1000*60*60*24));
-                    if (!['AG COLETAR','AG. COLETAR','EXPEDIDO','EXPEDIDOS'].includes(statusUsinagem)) {
-                        if (dpe < hoje) isAtrasado = true;
-                        else if (diff>=0 && diff<=15) isProximaEntrega = true;
+                if (tipoProduto === "CAMISA") {
+                    // Camisa é considerada atrasada quando o Status Camisa for diferente de
+                    // "CONCLUÍDO" e "AG. EIXO" e o Prazo de Entrega já tiver passado.
+                    if (dataEntregaCamisaInfo.dataObjeto instanceof Date) {
+                        const dpe = new Date(dataEntregaCamisaInfo.dataObjeto);
+                        dpe.setHours(0,0,0,0);
+                        const statusOk = ['CONCLUIDO','CONCLUÍDO','AG EIXO','AG. EIXO'].includes(_statusRef);
+                        if (!statusOk && dpe < hoje) isAtrasado = true;
+                    }
+                } else {
+                    if (dataEntregaInfo.dataObjeto instanceof Date) {
+                        const dpe = new Date(dataEntregaInfo.dataObjeto);
+                        dpe.setHours(0,0,0,0);
+                        const diff = Math.ceil((dpe - hoje)/(1000*60*60*24));
+                        if (!['AG COLETAR','AG. COLETAR','EXPEDIDO','EXPEDIDOS'].includes(statusUsinagem)) {
+                            if (dpe < hoje) isAtrasado = true;
+                            else if (diff>=0 && diff<=15) isProximaEntrega = true;
+                        }
                     }
                 }
 
@@ -1309,7 +1321,6 @@
                 if (isProximaEntrega) proximasEntregas++;
 
                 let dataFundidoInfo = formatarDataExcel(pzFundidoCru);
-                let dataEntregaCamisaInfo = formatarDataExcel(pzEntregaCamisaCru);
                 listaOriginalVálida.push({
                     valoresFormatados: { pv,item:itemNum,cliente,peca,seq,descricao,qtd:qtdNum,
                         pzFundidoStr:dataFundidoInfo.stringLegivel,pzEntregaStr:dataEntregaInfo.stringLegivel,
