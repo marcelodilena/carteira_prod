@@ -1008,7 +1008,7 @@
                     // a mesma da varredura bruta de células abaixo, permitindo alinhar as colunas
                     // OP1..OP9 (e sua cor de preenchimento) com cada linha.
                     abasPlanilha[chaveAba] = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: "", blankrows: true });
-                    if (chaveAba === normalizarTextoParaFiltro("CAMISA e EIXO")) {
+                    if (chaveAba === normalizarTextoParaFiltro("CAMISAS")) {
                         camisaEtapasOPPorIndice = extrairEtapasColunasOP(workbook.Sheets[name]);
                     }
                 });
@@ -1211,11 +1211,11 @@
                 const b = abasPlanilha[normalizarTextoParaFiltro("BAGACEIRAS")] || [];
                 const p = abasPlanilha[normalizarTextoParaFiltro("PENTES")] || [];
                 const r = abasPlanilha[normalizarTextoParaFiltro("RODETES NOVOS")] || [];
-                const ce = abasPlanilha[normalizarTextoParaFiltro("CAMISA e EIXO")] || [];
+                const ce = abasPlanilha[normalizarTextoParaFiltro("CAMISAS")] || [];
                 const f = abasPlanilha[normalizarTextoParaFiltro("PERIFÉRICOS")] || [];
                 dadosLinhasBrutas = [...b,...p,...r,...ce,...f];
             } else if (tipoProduto === "CAMISA") {
-                dadosLinhasBrutas = abasPlanilha[normalizarTextoParaFiltro("CAMISA e EIXO")] || [];
+                dadosLinhasBrutas = abasPlanilha[normalizarTextoParaFiltro("CAMISAS")] || [];
             } else {
                 dadosLinhasBrutas = abasPlanilha[normalizarTextoParaFiltro(tipoProduto)] || [];
             }
@@ -1241,7 +1241,7 @@
                 const itemNum   = String(buscarValor(linha,'Item')||buscarValor(linha,'Item2')||'-').trim();
                 const qtdRaw    = buscarValor(linha,'Qtde')||buscarValor(linha,'Qtd')||buscarValor(linha,'Qtde.')||1;
                 const qtdNum    = parseInt(qtdRaw)||0;
-                const pzFundidoCru = buscarValor(linha,'Prazo Fundido')||buscarValor(linha,'Data Prev. Fundido');
+                const pzFundidoCru = buscarValor(linha,'Prazo Fund')||buscarValor(linha,'Prazo Fundido')||buscarValor(linha,'Data Prev. Fundido');
                 const pzEntregaCru = buscarValor(linha,'Prazo Entrega')||buscarValor(linha,'Data Prev. Entrega');
                 const statusUsinagemCru = buscarValor(linha,'Status Usinagem')||buscarValor(linha,'Status');
                 const observacaoCru = String(buscarValor(linha,'Observação')||buscarValor(linha,'Observacao')||buscarValor(linha,'Obs')).trim();
@@ -1258,6 +1258,8 @@
 
                 // Campos específicos CAMISA
                 const bit           = String(buscarValor(linha,'Bit')||buscarValor(linha,'Bit.')||'').trim();
+                const tipoCamisa    = String(buscarValor(linha,'Tipo')||'').trim();
+                const posCamisa     = String(buscarValor(linha,'Pos.')||buscarValor(linha,'Pos')||'').trim();
                 const terno         = String(buscarValor(linha,'Terno')||'').trim();
                 const forma         = String(buscarValor(linha,'Forma')||'').trim();
                 const statusCamisa  = String(buscarValor(linha,'Status\nCamisa')||buscarValor(linha,'Status Camisa')||buscarValor(linha,'Status Usinagem')||'').trim();
@@ -1315,7 +1317,7 @@
                         observacao:observacaoCru,atrasadoVisual:isAtrasado,proximaVisual:isProximaEntrega,
                         des,plainar,facear,serrar,soldadura,encaixe,furacao,acabam,liberacao,
                         // Campos Camisa
-                        bit, terno, forma,
+                        bit, tipoCamisa, posCamisa, terno, forma,
                         recursoCamisa: recursoCamisaPendente,
                         etapasCamisa: etapasCamisa,
                         statusCamisa: statusCamisa,
@@ -1389,8 +1391,8 @@
                     <td><input type="text" id="filtro-col-pzentrega" class="table-filter-input" placeholder="ex: 07/2026"></td>
                     <td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
             } else if (tipoProduto==="CAMISA") {
-                colspanRestante=3;
-                colunasHTML=`<th>PV</th><th>Cliente</th><th>O.S./Peça</th><th>Descrição</th><th style="text-align:center">Qtde.</th><th style="text-align:center">Bit</th><th style="text-align:center">Terno</th><th style="text-align:center">Forma</th><th>Prazo Fund.</th><th style="text-align:center">Des.</th><th>Recurso Camisa</th><th>Status Camisa</th><th style="text-align:center">Nº Eixo</th><th>Prazo Entrega</th>`;
+                colspanRestante=5;
+                colunasHTML=`<th>PV</th><th>Cliente</th><th>O.S./Peça</th><th>Descrição</th><th style="text-align:center">Qtde.</th><th style="text-align:center">Bit</th><th style="text-align:center">Tipo</th><th style="text-align:center">Pos.</th><th style="text-align:center">Terno</th><th style="text-align:center">Forma</th><th>Prazo Fund.</th><th style="text-align:center">Des.</th><th>Recurso Camisa</th><th>Status Camisa</th><th style="text-align:center">Nº Eixo</th><th>Prazo Entrega</th>`;
                 colunasFiltroHTML=`
                     <td><select id="filtro-col-pv" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-cliente" class="table-filter-select"></select></td>
@@ -1398,6 +1400,8 @@
                     <td><select id="filtro-col-desc" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-qtd" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-bit" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-tipo-camisa" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-pos-camisa" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-terno" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-forma" class="table-filter-select"></select></td>
                     <td><input type="text" id="filtro-col-pzfundido" class="table-filter-input" placeholder="ex: 07/2026"></td>
@@ -1500,6 +1504,7 @@
                 {id:'filtro-col-status-geral',chave:'statusUsinagem'},
                 {id:'filtro-col-bit',chave:'bit'},{id:'filtro-col-terno',chave:'terno'},
                 {id:'filtro-col-forma',chave:'forma'},
+                {id:'filtro-col-tipo-camisa',chave:'tipoCamisa'},{id:'filtro-col-pos-camisa',chave:'posCamisa'},
                 {id:'filtro-col-status-camisa',chave:'statusCamisa'},{id:'filtro-col-nr-eixo',chave:'nrEixo'},
                 {id:'filtro-col-pzentrega-camisa',chave:'pzEntregaCamisaStr'}
             ];
@@ -1549,6 +1554,8 @@
                 fLiberacao: document.getElementById('filtro-col-liberacao')?.value||'',
                 fStatusGeral: document.getElementById('filtro-col-status-geral')?.value||'',
                 fBit:        document.getElementById('filtro-col-bit')?.value||'',
+                fTipoCamisa: document.getElementById('filtro-col-tipo-camisa')?.value||'',
+                fPosCamisa:  document.getElementById('filtro-col-pos-camisa')?.value||'',
                 fTerno:      document.getElementById('filtro-col-terno')?.value||'',
                 fForma:      document.getElementById('filtro-col-forma')?.value||'',
                 fRecursoCamisa: normalizarTextoParaFiltro(document.getElementById('filtro-col-recurso-camisa')?.value||''),
@@ -1586,6 +1593,8 @@
                     if (f.fLiberacao && normalizarTextoParaFiltro(vf.statusUsinagem) !== f.fLiberacao) return false;
                 } else if (nomeAbaAtiva==="CAMISA") {
                     if (f.fBit        && normalizarTextoParaFiltro(vf.bit)           !== f.fBit)           return false;
+                    if (f.fTipoCamisa && normalizarTextoParaFiltro(vf.tipoCamisa)    !== f.fTipoCamisa)    return false;
+                    if (f.fPosCamisa  && normalizarTextoParaFiltro(vf.posCamisa)     !== f.fPosCamisa)     return false;
                     if (f.fTerno      && normalizarTextoParaFiltro(vf.terno)         !== f.fTerno)         return false;
                     if (f.fForma      && normalizarTextoParaFiltro(vf.forma)         !== f.fForma)         return false;
                     if (f.fRecursoCamisa && !normalizarTextoParaFiltro(vf.recursoCamisa).includes(f.fRecursoCamisa)) return false;
@@ -1612,7 +1621,7 @@
             atualizarCardsFiltrados(linhasFiltrosColuna);
 
             if (linhas.length===0) {
-                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?18:(nomeAbaAtiva==="PENTES"?11:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?15:16))));
+                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?18:(nomeAbaAtiva==="PENTES"?11:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?17:16))));
                 tbody.innerHTML=`<tr><td colspan="${totalColspan}" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro corresponde aos filtros aplicados.</td></tr>`;
                 return;
             }
@@ -1639,6 +1648,8 @@
                         <td style="color:var(--text-2)">${vf.descricao}</td>
                         <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
                         <td style="text-align:center;color:var(--text-2)">${vf.bit||'—'}</td>
+                        <td style="text-align:center;color:var(--text-2)">${vf.tipoCamisa||'—'}</td>
+                        <td style="text-align:center;color:var(--text-2)">${vf.posCamisa||'—'}</td>
                         <td style="text-align:center;color:var(--text-2)">${vf.terno||'—'}</td>
                         <td style="text-align:center;color:var(--text-2)">${vf.forma||'—'}</td>
                         <td style="color:var(--text-2)">${vf.pzFundidoStr||'—'}</td>
