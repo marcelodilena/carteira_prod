@@ -1280,8 +1280,8 @@
                 const _statusRef = (tipoProduto === "CAMISA") ? normalizarTextoParaFiltro(statusCamisa) : statusUsinagem;
                 let isLiberada;
                 if (tipoProduto === "CAMISA") {
-                    // Camisa só é considerada liberada quando o status for "Ag. Eixo" ou "Ag. Coletar"
-                    isLiberada = ['AG EIXO','AG. EIXO','AG COLETAR','AG. COLETAR'].includes(_statusRef);
+                    // Camisa só é considerada liberada quando o status for "Concluído" ou "Ag. Eixo"
+                    isLiberada = ['CONCLUIDO','CONCLUÍDO','AG EIXO','AG. EIXO'].includes(_statusRef);
                 } else {
                     isLiberada = !['AG FUNDIDO','AG. FUNDIDO','AG FUSÃO','AG. FUSÃO'].includes(_statusRef);
                 }
