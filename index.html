@@ -1842,10 +1842,11 @@
                 const usinPrevAcbInfo  = formatarDataExcel(usinPrevAcbRaw);
                 const usinRealAcbInfo  = formatarDataExcel(usinRealAcbRaw);
 
-                // Determine if FINALIZADA: usinRealAcb not empty and not '-'
+                // Determine if FINALIZADA: usinRealAcb preenchido OU status Expedido
                 const usinRealAcbStr = String(usinRealAcbRaw).trim();
                 const temAcabamento  = usinRealAcbStr && usinRealAcbStr !== '-' && usinRealAcbStr !== '';
-                const isFinalizada   = temAcabamento && usinRealAcbInfo.dataObjeto;
+                const statusExpedido = normalizarTextoParaFiltro(statusUs) === 'EXPEDIDO';
+                const isFinalizada   = (temAcabamento && usinRealAcbInfo.dataObjeto) || statusExpedido;
 
                 // Determine ATRASO: 
                 // If Usin.Real Acabamento == '-', analyse Usin.Real (Desbaste) vs Prazo Contratual
