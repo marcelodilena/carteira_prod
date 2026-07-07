@@ -374,6 +374,11 @@
             border-right: 1px solid var(--border);
         }
         .data-table thead th:last-child { border-right: none; }
+        .th-sort { cursor: pointer; user-select: none; transition: color 0.15s; }
+        .th-sort:hover { color: var(--accent); }
+        .th-sort .sort-arrow { display: inline-block; width: 10px; font-size: 0.65rem; opacity: 0.5; }
+        .th-sort.sort-active { color: var(--accent); }
+        .th-sort.sort-active .sort-arrow { opacity: 1; }
         .filter-row td {
             padding: 0.35rem 0.4rem;
             background: var(--surface-1);
@@ -1793,7 +1798,8 @@
 
         // --- CARTEIRA DIVERSOS ---
         let diversosListaOriginal = [];
-        let diversosFiltroAba = 'total'; // total | finalizadas | atrasos
+        let diversosFiltroAba = 'total'; // total | finalizadas | atrasos | liberadas
+        let diversosOrdenacao = { campo: null, dir: 1 }; // dir: 1 asc, -1 desc
 
         function construirTelaVIDiversos() {
             nomeAbaAtiva = 'VI DIVERSOS';
@@ -1809,7 +1815,7 @@
 
             const hoje = new Date(); hoje.setHours(0,0,0,0);
             diversosListaOriginal = [];
-            let total = 0, finalizadas = 0, atrasos = 0;
+            let total = 0, finalizadas = 0, atrasos = 0, expedidos = 0;
 
             rawData.forEach(linha => {
                 const os          = String(buscarValor(linha,'O.S.')||buscarValor(linha,'OS')||'').trim();
@@ -1842,11 +1848,13 @@
                 const usinPrevAcbInfo  = formatarDataExcel(usinPrevAcbRaw);
                 const usinRealAcbInfo  = formatarDataExcel(usinRealAcbRaw);
 
-                // Determine if FINALIZADA: usinRealAcb preenchido OU status Expedido
+                // Determine if FINALIZADA: usinRealAcb preenchido
                 const usinRealAcbStr = String(usinRealAcbRaw).trim();
                 const temAcabamento  = usinRealAcbStr && usinRealAcbStr !== '-' && usinRealAcbStr !== '';
-                const statusExpedido = normalizarTextoParaFiltro(statusUs) === 'EXPEDIDO';
-                const isFinalizada   = (temAcabamento && usinRealAcbInfo.dataObjeto) || statusExpedido;
+                const isFinalizada   = temAcabamento && usinRealAcbInfo.dataObjeto;
+
+                // Item Expedido: fica fora da listagem/card "Total" por padrão, só aparece em "Liberadas"
+                const isExpedido = ['EXPEDIDO','EXPEDIDOS'].includes(normalizarTextoParaFiltro(statusUs));
 
                 // Determine ATRASO: 
                 // If Usin.Real Acabamento == '-', analyse Usin.Real (Desbaste) vs Prazo Contratual
@@ -1872,21 +1880,25 @@
                     }
                 }
 
-                total++;
-                if (isFinalizada) finalizadas++;
-                if (isAtrasado) atrasos++;
+                if (!isExpedido) {
+                    total++;
+                    if (isFinalizada) finalizadas++;
+                    if (isAtrasado) atrasos++;
+                } else {
+                    expedidos++;
+                }
 
                 diversosListaOriginal.push({
                     os, item, cliente, peca, descricao, qtd, statusUs, recurso, obs,
                     prazoContraStr: prazoContraInfo.stringLegivel, prazoContraObj: prazoContraInfo.dataObjeto,
-                    fundPrevDsb: fundPrevDsbInfo.stringLegivel,
+                    fundPrevDsb: fundPrevDsbInfo.stringLegivel, fundPrevDsbObj: fundPrevDsbInfo.dataObjeto,
                     fundRealDsb: fundRealDsbInfo.stringLegivel,
                     usinPrevDsb: usinPrevDsbInfo.stringLegivel,
                     usinRealDsb: usinRealDsbInfo.stringLegivel,
-                    fundPrevAcb: fundPrevAcbInfo.stringLegivel,
+                    fundPrevAcb: fundPrevAcbInfo.stringLegivel, fundPrevAcbObj: fundPrevAcbInfo.dataObjeto,
                     usinPrevAcb: usinPrevAcbInfo.stringLegivel,
                     usinRealAcb: usinRealAcbInfo.stringLegivel,
-                    isFinalizada, isAtrasado
+                    isFinalizada, isAtrasado, isExpedido
                 });
             });
 
@@ -1908,7 +1920,7 @@
                     <h3>Vendas Industriais · Carteira Diversos</h3>
                 </div>
 
-                <section class="cards-grid-6" style="grid-template-columns:repeat(3,1fr)">
+                <section class="cards-grid-6" style="grid-template-columns:repeat(4,1fr)">
                     <div class="status-card total selected" onclick="diversosFiltrarCard('total',this)">
                         <div class="card-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--card-color)"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="1"/></svg>
@@ -1927,6 +1939,12 @@
                         </div>
                         <div class="card-meta"><div class="card-title">Atrasos</div><div class="card-value" id="div-card-atr">${atrasos}</div></div>
                     </div>
+                    <div class="status-card liberadas" onclick="diversosFiltrarCard('liberadas',this)">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--card-color)"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                        </div>
+                        <div class="card-meta"><div class="card-title">Liberadas</div><div class="card-value" id="div-card-lib">${expedidos}</div></div>
+                    </div>
                 </section>
 
                 <div class="table-card">
@@ -1944,12 +1962,12 @@
                                     <th>Peça</th>
                                     <th>Descrição</th>
                                     <th style="text-align:center">Qtd.</th>
-                                    <th>Prazo Contratual</th>
-                                    <th>Fund.Prev. Desb.</th>
+                                    <th class="th-sort" data-sort="prazoContraObj" onclick="diversosOrdenar('prazoContraObj', this)">Prazo Contratual <span class="sort-arrow"></span></th>
+                                    <th class="th-sort" data-sort="fundPrevDsbObj" onclick="diversosOrdenar('fundPrevDsbObj', this)">Fund.Prev. Desb. <span class="sort-arrow"></span></th>
                                     <th>Fund.Real Desb.</th>
                                     <th>Usin.Prev. Desb.</th>
                                     <th>Usin.Real Desb.</th>
-                                    <th>Fund.Prev. Acab.</th>
+                                    <th class="th-sort" data-sort="fundPrevAcbObj" onclick="diversosOrdenar('fundPrevAcbObj', this)">Fund.Prev. Acab. <span class="sort-arrow"></span></th>
                                     <th>Usin.Prev. Acab.</th>
                                     <th>Usin.Real Acab.</th>
                                     <th>Status Usin.</th>
@@ -2000,7 +2018,7 @@
             populateSelect('df-peca',   diversosListaOriginal.map(r=>r.peca));
             populateSelect('df-desc',   diversosListaOriginal.map(r=>r.descricao));
             populateSelect('df-prazo',  diversosListaOriginal.map(r=>r.prazoContraStr));
-            populateSelect('df-status', diversosListaOriginal.map(r=>r.statusUs));
+            populateSelect('df-status', diversosListaOriginal.filter(r=>!r.isExpedido).map(r=>r.statusUs));
 
             document.querySelectorAll('#tbl-diversos .table-filter-select, #tbl-diversos .table-filter-input').forEach(el => {
                 el.addEventListener('change', diversosRenderizar);
@@ -2015,8 +2033,23 @@
             document.querySelectorAll('#custom-dashboard-area .status-card').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
             diversosFiltroAba = aba;
-            const titulos = { total:'Todos os Registros', finalizadas:'Itens Finalizados', atrasos:'Itens em Atraso' };
+            const titulos = { total:'Todos os Registros', finalizadas:'Itens Finalizados', atrasos:'Itens em Atraso', liberadas:'Itens Liberados (Expedidos)' };
             document.getElementById('div-table-title').textContent = titulos[aba] || 'Todos';
+            diversosRenderizar();
+        }
+
+        function diversosOrdenar(campo, thEl) {
+            if (diversosOrdenacao.campo === campo) {
+                diversosOrdenacao.dir *= -1;
+            } else {
+                diversosOrdenacao = { campo, dir: 1 };
+            }
+            document.querySelectorAll('#tbl-diversos .th-sort').forEach(th => {
+                th.classList.remove('sort-active');
+                th.querySelector('.sort-arrow').textContent = '';
+            });
+            thEl.classList.add('sort-active');
+            thEl.querySelector('.sort-arrow').textContent = diversosOrdenacao.dir === 1 ? '▲' : '▼';
             diversosRenderizar();
         }
 
@@ -2033,6 +2066,9 @@
             const fObs    = normalizarTextoParaFiltro(document.getElementById('df-obs')?.value||'');
 
             let lista = diversosListaOriginal.filter(r => {
+                // Itens Expedidos ficam ocultos do Total/Finalizadas/Atrasos — só aparecem em "Liberadas"
+                if (diversosFiltroAba === 'liberadas') { if (!r.isExpedido) return false; }
+                else if (r.isExpedido) return false;
                 if (diversosFiltroAba === 'finalizadas' && !r.isFinalizada) return false;
                 if (diversosFiltroAba === 'atrasos'     && !r.isAtrasado)   return false;
                 if (fOs    && normalizarTextoParaFiltro(r.os)        !== fOs)    return false;
@@ -2044,6 +2080,18 @@
                 if (fObs   && !normalizarTextoParaFiltro(r.obs).includes(fObs))  return false;
                 return true;
             });
+
+            // Ordenação por coluna (clique no cabeçalho) — datas vazias sempre vão para o final
+            if (diversosOrdenacao.campo) {
+                const campo = diversosOrdenacao.campo, dir = diversosOrdenacao.dir;
+                lista = [...lista].sort((a, b) => {
+                    const va = a[campo], vb = b[campo];
+                    if (!va && !vb) return 0;
+                    if (!va) return 1;
+                    if (!vb) return -1;
+                    return (new Date(va) - new Date(vb)) * dir;
+                });
+            }
 
             const soma = lista.reduce((s,r)=>s+r.qtd,0);
             document.getElementById('df-soma').textContent = soma;
