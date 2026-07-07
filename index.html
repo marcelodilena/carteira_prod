@@ -374,6 +374,12 @@
             border-right: 1px solid var(--border);
         }
         .data-table thead th:last-child { border-right: none; }
+        /* Carteira Diversos tem muitas colunas com nomes longos — permite quebrar em 2 linhas no cabeçalho */
+        #tbl-diversos thead th {
+            white-space: normal;
+            line-height: 1.25;
+            vertical-align: bottom;
+        }
         .th-sort { cursor: pointer; user-select: none; transition: color 0.15s; }
         .th-sort:hover { color: var(--accent); }
         .th-sort .sort-arrow { display: inline-block; width: 10px; font-size: 0.65rem; opacity: 0.5; }
