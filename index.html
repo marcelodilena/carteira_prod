@@ -1798,7 +1798,7 @@
 
         // --- CARTEIRA DIVERSOS ---
         let diversosListaOriginal = [];
-        let diversosFiltroAba = 'total'; // total | finalizadas | atrasos | liberadas
+        let diversosFiltroAba = 'total'; // total | atrasos | liberadas
         let diversosOrdenacao = { campo: null, dir: 1 }; // dir: 1 asc, -1 desc
 
         function construirTelaVIDiversos() {
@@ -1920,18 +1920,12 @@
                     <h3>Vendas Industriais · Carteira Diversos</h3>
                 </div>
 
-                <section class="cards-grid-6" style="grid-template-columns:repeat(4,1fr)">
+                <section class="cards-grid-6" style="grid-template-columns:repeat(3,1fr)">
                     <div class="status-card total selected" onclick="diversosFiltrarCard('total',this)">
                         <div class="card-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--card-color)"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="1"/></svg>
                         </div>
                         <div class="card-meta"><div class="card-title">Total</div><div class="card-value" id="div-card-total">${total}</div></div>
-                    </div>
-                    <div class="status-card finalizadas" onclick="diversosFiltrarCard('finalizadas',this)">
-                        <div class="card-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--card-color)"><polyline points="20 6 9 17 4 12"/></svg>
-                        </div>
-                        <div class="card-meta"><div class="card-title">Finalizadas</div><div class="card-value" id="div-card-fin">${finalizadas}</div></div>
                     </div>
                     <div class="status-card atrasos" onclick="diversosFiltrarCard('atrasos',this)">
                         <div class="card-icon">
@@ -1967,7 +1961,7 @@
                                     <th>Fund.Real Desb.</th>
                                     <th>Usin.Prev. Desb.</th>
                                     <th>Usin.Real Desb.</th>
-                                    <th class="th-sort" data-sort="fundPrevAcbObj" onclick="diversosOrdenar('fundPrevAcbObj', this)">Fund.Prev. Acab. <span class="sort-arrow"></span></th>
+                                    <th class="th-sort" data-sort="fundPrevAcbObj" onclick="diversosOrdenar('fundPrevAcbObj', this)">Fund. Acab. Previsto <span class="sort-arrow"></span></th>
                                     <th>Usin.Prev. Acab.</th>
                                     <th>Usin.Real Acab.</th>
                                     <th>Status Usin.</th>
@@ -2033,7 +2027,7 @@
             document.querySelectorAll('#custom-dashboard-area .status-card').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
             diversosFiltroAba = aba;
-            const titulos = { total:'Todos os Registros', finalizadas:'Itens Finalizados', atrasos:'Itens em Atraso', liberadas:'Itens Liberados (Expedidos)' };
+            const titulos = { total:'Todos os Registros', atrasos:'Itens em Atraso', liberadas:'Itens Liberados (Finalizados)' };
             document.getElementById('div-table-title').textContent = titulos[aba] || 'Todos';
             diversosRenderizar();
         }
@@ -2069,7 +2063,6 @@
                 // Itens Expedidos ficam ocultos do Total/Finalizadas/Atrasos — só aparecem em "Liberadas"
                 if (diversosFiltroAba === 'liberadas') { if (!r.isExpedido) return false; }
                 else if (r.isExpedido) return false;
-                if (diversosFiltroAba === 'finalizadas' && !r.isFinalizada) return false;
                 if (diversosFiltroAba === 'atrasos'     && !r.isAtrasado)   return false;
                 if (fOs    && normalizarTextoParaFiltro(r.os)        !== fOs)    return false;
                 if (fCli   && normalizarTextoParaFiltro(r.cliente)   !== fCli)   return false;
@@ -2105,7 +2098,7 @@
 
             lista.forEach(r => {
                 const tr = document.createElement('tr');
-                if (r.isFinalizada) tr.classList.add('row-finalizada');
+                if (r.isFinalizada || r.isExpedido) tr.classList.add('row-finalizada');
                 if (r.isAtrasado)   tr.classList.add('row-atrasada');
 
                 // Recurso orçado: render as colored badges for each code
@@ -2129,7 +2122,7 @@
                     obsHTML = `<button class="btn-obs-trigger" onclick="abrirModalObservacao('${txt}')" title="Ver nota">💬</button>`;
                 }
 
-                const statusBadge = r.isFinalizada
+                const statusBadge = (r.isFinalizada || r.isExpedido)
                     ? `<span class="badge-status-usinagem" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3)">✔ Finalizado</span>`
                     : `<span class="badge-status-usinagem">${r.statusUs||'—'}</span>`;
 
