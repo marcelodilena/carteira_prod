@@ -1053,6 +1053,19 @@
             document.getElementById('sub-' + tabId).classList.add('active');
             document.querySelectorAll('.sub-tab').forEach(s => s.classList.remove('active'));
             document.getElementById('custom-dashboard-area').innerHTML = '';
+            document.getElementById('statusbar-modulo').textContent = nomeDepartamento;
+
+            // Açúcar e Álcool abre direto na Carteira Geral / Vendas Industriais abre direto na Carteira Diversos
+            const autoAbrirPorAba = { 'acucar': 'CARTEIRA GERAL', 'vendas': 'VI DIVERSOS' };
+            if (autoAbrirPorAba[tabId] && Object.keys(abasPlanilha).length > 0) {
+                const linkAuto = document.querySelector(`[data-tipo="${autoAbrirPorAba[tabId]}"]`);
+                if (linkAuto) {
+                    document.getElementById('status-screen').style.display = 'none';
+                    linkAuto.click();
+                    return;
+                }
+            }
+
             const telaStatus = document.getElementById('status-screen');
             telaStatus.style.display = 'flex';
             if (Object.keys(abasPlanilha).length > 0) {
@@ -1060,7 +1073,6 @@
                 document.getElementById('status-title').style.color = '';
                 document.getElementById('status-desc').textContent = 'Selecione uma opção no submenu acima para visualizar os dados.';
             }
-            document.getElementById('statusbar-modulo').textContent = nomeDepartamento;
         }
 
         // --- UTILS ---
