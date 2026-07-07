@@ -359,7 +359,7 @@
         .table-wrapper::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
         .table-wrapper::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
 
-        .data-table { width: max-content; min-width: 100%; border-collapse: collapse; text-align: left; }
+        .data-table { width: 100%; border-collapse: collapse; text-align: left; }
         .data-table thead { position: sticky; top: 0; z-index: 10; }
         .data-table thead th {
             background: var(--surface-2);
@@ -385,10 +385,8 @@
             color: var(--text-1);
             font-size: 0.8rem;
             border-right: 1px solid var(--row-border-light);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 280px;
+            white-space: normal;
+            word-break: break-word;
         }
         .data-table td:last-child { border-right: none; }
         .data-table tr:hover td { background: var(--surface-2); }
@@ -649,7 +647,6 @@
             .card-value { font-size: 1.55rem; }
             .card-title { font-size: 0.66rem; }
             .data-table td, .data-table thead th { padding: 0.5rem 0.65rem; font-size: 0.76rem; }
-            .data-table td { max-width: 220px; }
         }
 
         @media (max-width: 768px) {
