@@ -1803,6 +1803,20 @@
 
         function construirTelaVIDiversos() {
             nomeAbaAtiva = 'VI DIVERSOS';
+
+            // Calcula se uma data prevista está em atraso (comparando com a data real, ou com hoje se ainda não realizada)
+            // e quantos dias de atraso já se passaram.
+            function calcularDiasAtraso(prevObj, realObj, hoje) {
+                if (!prevObj) return { atrasado: false, dias: 0 };
+                const pz = new Date(prevObj); pz.setHours(0,0,0,0);
+                const ref = realObj ? new Date(realObj) : hoje;
+                ref.setHours(0,0,0,0);
+                if (ref > pz) {
+                    return { atrasado: true, dias: Math.round((ref - pz) / 86400000) };
+                }
+                return { atrasado: false, dias: 0 };
+            }
+
             document.getElementById('statusbar-modulo').textContent = 'Carteira Diversos';
             const areaDestino = document.getElementById('custom-dashboard-area');
             areaDestino.innerHTML = '';
@@ -1882,6 +1896,16 @@
                     }
                 }
 
+                // Atraso específico de cada etapa de FUNDIÇÃO PREVISTA (Desbaste e Acabamento):
+                // compara a data prevista com a data real da mesma etapa; se ainda não realizada, compara com hoje.
+                const fundRealDsbStr = String(fundRealDsbRaw).trim();
+                const temFundRealDsb = fundRealDsbStr && fundRealDsbStr !== '-' && fundRealDsbStr !== '';
+                const atrasoDsb = calcularDiasAtraso(fundPrevDsbInfo.dataObjeto, temFundRealDsb ? fundRealDsbInfo.dataObjeto : null, hoje);
+
+                const fundRealAcbStr = String(fundRealAcbRaw).trim();
+                const temFundRealAcb = fundRealAcbStr && fundRealAcbStr !== '-' && fundRealAcbStr !== '';
+                const atrasoAcb = calcularDiasAtraso(fundPrevAcbInfo.dataObjeto, temFundRealAcb ? fundRealAcbInfo.dataObjeto : null, hoje);
+
                 if (!isExpedido) {
                     total++;
                     if (isFinalizada) finalizadas++;
@@ -1901,7 +1925,9 @@
                     fundRealAcb: fundRealAcbInfo.stringLegivel,
                     usinPrevAcb: usinPrevAcbInfo.stringLegivel,
                     usinRealAcb: usinRealAcbInfo.stringLegivel,
-                    isFinalizada, isAtrasado, isExpedido
+                    isFinalizada, isAtrasado, isExpedido,
+                    atrasoFundDsb: atrasoDsb.atrasado, diasAtrasoFundDsb: atrasoDsb.dias,
+                    atrasoFundAcb: atrasoAcb.atrasado, diasAtrasoFundAcb: atrasoAcb.dias
                 });
             });
 
@@ -1961,10 +1987,12 @@
                                     <th style="text-align:center">Qtd.</th>
                                     <th class="th-sort" data-sort="prazoContraObj" onclick="diversosOrdenar('prazoContraObj', this)">Prazo Contratual <span class="sort-arrow"></span></th>
                                     <th class="th-sort" data-sort="fundPrevDsbObj" onclick="diversosOrdenar('fundPrevDsbObj', this)">Fund.Prev. Desb. <span class="sort-arrow"></span></th>
+                                    <th style="text-align:center">Dias Atraso</th>
                                     <th>Fund.Real Desb.</th>
                                     <th>Usin.Prev. Desb.</th>
                                     <th>Usin.Real Desb.</th>
                                     <th class="th-sort" data-sort="fundPrevAcbObj" onclick="diversosOrdenar('fundPrevAcbObj', this)">Fund. Prev. Acab. <span class="sort-arrow"></span></th>
+                                    <th style="text-align:center">Dias Atraso</th>
                                     <th>Fund. Real Acab.</th>
                                     <th>Usin.Prev. Acab.</th>
                                     <th>Usin.Real Acab.</th>
@@ -1979,7 +2007,7 @@
                                     <td><select id="df-desc" class="table-filter-select"></select></td>
                                     <td></td>
                                     <td><select id="df-prazo" class="table-filter-select"></select></td>
-                                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
                                     <td><select id="df-status" class="table-filter-select"></select></td>
                                     <td></td>
                                     <td><input type="text" id="df-obs" class="table-filter-input" placeholder="Buscar..."></td>
@@ -1990,7 +2018,7 @@
                                 <tr>
                                     <td colspan="4" style="text-align:right;color:var(--text-2)">SOMA TOTAL DAS PEÇAS:</td>
                                     <td id="df-soma" style="text-align:center;color:var(--accent);font-size:1rem;font-weight:700">0</td>
-                                    <td colspan="12"></td>
+                                    <td colspan="14"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -2096,7 +2124,7 @@
 
             tbody.innerHTML = '';
             if (lista.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="17" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro encontrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="19" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro encontrado.</td></tr>`;
                 return;
             }
 
@@ -2137,11 +2165,13 @@
                     <td style="color:var(--text-2)">${r.descricao||'—'}</td>
                     <td style="text-align:center;font-weight:600;color:var(--accent)">${r.qtd}</td>
                     <td style="color:${r.isAtrasado?'#ef4444':'var(--text-1)'};font-weight:${r.isAtrasado?'600':'400'}">${r.prazoContraStr||'—'}</td>
-                    <td style="color:var(--text-2)">${r.fundPrevDsb||'—'}</td>
+                    <td style="color:${r.atrasoFundDsb?'#ef4444':'var(--text-2)'};font-weight:${r.atrasoFundDsb?'700':'400'}">${r.fundPrevDsb||'—'}</td>
+                    <td style="text-align:center;color:${r.atrasoFundDsb?'#ef4444':'var(--text-3)'};font-weight:${r.atrasoFundDsb?'700':'400'}">${r.atrasoFundDsb?(r.diasAtrasoFundDsb+'d'):'—'}</td>
                     <td style="color:var(--text-2)">${r.fundRealDsb||'—'}</td>
                     <td style="color:var(--text-2)">${r.usinPrevDsb||'—'}</td>
                     <td style="color:${usinAcbEmpty&&refIsLate?'#ef4444':'var(--text-2)'}">${r.usinRealDsb||'—'}</td>
-                    <td style="color:var(--text-2)">${r.fundPrevAcb||'—'}</td>
+                    <td style="color:${r.atrasoFundAcb?'#ef4444':'var(--text-2)'};font-weight:${r.atrasoFundAcb?'700':'400'}">${r.fundPrevAcb||'—'}</td>
+                    <td style="text-align:center;color:${r.atrasoFundAcb?'#ef4444':'var(--text-3)'};font-weight:${r.atrasoFundAcb?'700':'400'}">${r.atrasoFundAcb?(r.diasAtrasoFundAcb+'d'):'—'}</td>
                     <td style="color:var(--text-2)">${r.fundRealAcb||'—'}</td>
                     <td style="color:var(--text-2)">${r.usinPrevAcb||'—'}</td>
                     <td style="color:${!usinAcbEmpty&&refIsLate?'#ef4444':r.isFinalizada?'#10b981':'var(--text-2)'};font-weight:${r.isFinalizada?'500':'400'}">${r.usinRealAcb||'—'}</td>
