@@ -856,6 +856,7 @@
             <div id="drawer-sub-vendas" style="display:none">
                 <div class="drawer-section-label">Vendas Industriais</div>
                 <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('VI DIVERSOS')">Carteira Diversos</div>
+                <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('MANGANES')">Manganês</div>
             </div>
 
             <div class="drawer-footer">MFD Sistema · Fundição Moreno © 2025</div>
@@ -927,6 +928,7 @@
         </ul>
         <ul id="sub-vendas" class="sub-tabs-group">
             <li><a class="sub-tab menu-item" data-tipo="VI DIVERSOS">Carteira Diversos</a></li>
+            <li><a class="sub-tab menu-item" data-tipo="MANGANES">Manganês</a></li>
         </ul>
     </div>
 
@@ -1213,6 +1215,8 @@
                 const tipo = this.getAttribute('data-tipo');
                 if (tipo === 'VI DIVERSOS') {
                     construirTelaVIDiversos();
+                } else if (tipo === 'MANGANES') {
+                    construirTelaManganes();
                 } else {
                     construirTelaPersonalizada(tipo);
                 }
@@ -1788,6 +1792,8 @@
             if (drawer) drawer.classList.remove('open');
             if (tipo === 'VI DIVERSOS') {
                 construirTelaVIDiversos();
+            } else if (tipo === 'MANGANES') {
+                construirTelaManganes();
             } else {
                 // find matching desktop menu item and click it
                 const link = document.querySelector(`[data-tipo="${tipo}"]`);
@@ -1800,6 +1806,11 @@
         let diversosListaOriginal = [];
         let diversosFiltroAba = 'total'; // total | atrasos | liberadas
         let diversosOrdenacao = { campo: null, dir: 1 }; // dir: 1 asc, -1 desc
+
+        // --- MANGANÊS ---
+        let manganesListaOriginal = [];
+        let manganesFiltroAba = 'total'; // total | atrasos | liberadas
+        let manganesOrdenacao = { campo: null, dir: 1 };
 
         function construirTelaVIDiversos() {
             nomeAbaAtiva = 'VI DIVERSOS';
@@ -1987,12 +1998,12 @@
                                     <th style="text-align:center">Qtd.</th>
                                     <th class="th-sort" data-sort="prazoContraObj" onclick="diversosOrdenar('prazoContraObj', this)">Prazo Contratual <span class="sort-arrow"></span></th>
                                     <th class="th-sort" data-sort="fundPrevDsbObj" onclick="diversosOrdenar('fundPrevDsbObj', this)">Fund.Prev. Desb. <span class="sort-arrow"></span></th>
-                                    <th style="text-align:center">Dias Atraso</th>
+                                    <th class="th-sort" style="text-align:center" data-sort="diasAtrasoFundDsb" onclick="diversosOrdenar('diasAtrasoFundDsb', this)">Dias Atraso <span class="sort-arrow"></span></th>
                                     <th>Fund.Real Desb.</th>
                                     <th>Usin.Prev. Desb.</th>
                                     <th>Usin.Real Desb.</th>
                                     <th class="th-sort" data-sort="fundPrevAcbObj" onclick="diversosOrdenar('fundPrevAcbObj', this)">Fund. Prev. Acab. <span class="sort-arrow"></span></th>
-                                    <th style="text-align:center">Dias Atraso</th>
+                                    <th class="th-sort" style="text-align:center" data-sort="diasAtrasoFundAcb" onclick="diversosOrdenar('diasAtrasoFundAcb', this)">Dias Atraso <span class="sort-arrow"></span></th>
                                     <th>Fund. Real Acab.</th>
                                     <th>Usin.Prev. Acab.</th>
                                     <th>Usin.Real Acab.</th>
@@ -2175,6 +2186,319 @@
                     <td style="color:var(--text-2)">${r.fundRealAcb||'—'}</td>
                     <td style="color:var(--text-2)">${r.usinPrevAcb||'—'}</td>
                     <td style="color:${!usinAcbEmpty&&refIsLate?'#ef4444':r.isFinalizada?'#10b981':'var(--text-2)'};font-weight:${r.isFinalizada?'500':'400'}">${r.usinRealAcb||'—'}</td>
+                    <td>${statusBadge}</td>
+                    <td>${recursoHTML}</td>
+                    <td class="centralized-status">${obsHTML}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- CARTEIRA MANGANÊS ---
+        function construirTelaManganes() {
+            nomeAbaAtiva = 'MANGANES';
+
+            function calcularDiasAtrasoMg(prevObj, realObj, hoje) {
+                if (!prevObj) return { atrasado: false, dias: 0 };
+                const pz = new Date(prevObj); pz.setHours(0,0,0,0);
+                const ref = realObj ? new Date(realObj) : hoje;
+                ref.setHours(0,0,0,0);
+                if (ref > pz) {
+                    return { atrasado: true, dias: Math.round((ref - pz) / 86400000) };
+                }
+                return { atrasado: false, dias: 0 };
+            }
+
+            document.getElementById('statusbar-modulo').textContent = 'Manganês';
+            const areaDestino = document.getElementById('custom-dashboard-area');
+            areaDestino.innerHTML = '';
+
+            const rawData = abasPlanilha[normalizarTextoParaFiltro('Manganês')] || [];
+            if (rawData.length === 0) {
+                areaDestino.innerHTML = `<div style="padding:2rem;text-align:center;color:#ef4444"><h2>Aba "Manganês" não encontrada na planilha.</h2></div>`;
+                return;
+            }
+
+            const hoje = new Date(); hoje.setHours(0,0,0,0);
+            manganesListaOriginal = [];
+            let total = 0, atrasos = 0, expedidos = 0;
+
+            rawData.forEach(linha => {
+                const os        = String(buscarValor(linha,'O.S.')||buscarValor(linha,'OS')||'').trim();
+                const item      = String(buscarValor(linha,'Item')||'').trim();
+                const cliente   = String(buscarValor(linha,'Cliente')||'').trim();
+                const peca      = String(buscarValor(linha,'Peça')||buscarValor(linha,'Peca')||'').trim();
+                const descricao = String(buscarValor(linha,'Descrição')||buscarValor(linha,'Descricao')||'').trim();
+                const statusUs  = String(buscarValor(linha,'Status')||'').trim();
+                const recurso   = String(buscarValor(linha,'Recurso')||'').trim();
+                const obs       = String(buscarValor(linha,'Observação')||buscarValor(linha,'Observacao')||'').trim();
+
+                const prazoContratualRaw = buscarValor(linha,'Prazo Contratual')||buscarValor(linha,'PrazoContratual')||buscarValor(linha,'Prazo\nContratual')||'';
+                const fundPrevAcbRaw = buscarValor(linha,'Fund. Prev.\n(Acabamento)')||buscarValor(linha,'FundPrevAcabamento')||'';
+                const fundRealAcbRaw = buscarValor(linha,'Fund. Real\n(Acabamento)')||buscarValor(linha,'FundRealAcabamento')||'';
+                const usinPrevAcbRaw = buscarValor(linha,'Usin. Prev.\n(Acabamento)')||buscarValor(linha,'UsinPrevAcabamento')||'';
+                const usinRealAcbRaw = buscarValor(linha,'Usin. Real\n(Acabamento)')||buscarValor(linha,'UsinRealAcabamento')||'';
+
+                if (!os && !cliente && !descricao) return;
+
+                const prazoContraInfo = formatarDataExcel(prazoContratualRaw);
+                const fundPrevAcbInfo = formatarDataExcel(fundPrevAcbRaw);
+                const fundRealAcbInfo = formatarDataExcel(fundRealAcbRaw);
+                const usinPrevAcbInfo = formatarDataExcel(usinPrevAcbRaw);
+                const usinRealAcbInfo = formatarDataExcel(usinRealAcbRaw);
+
+                // FINALIZADA: Usin.Real (Acabamento) preenchido
+                const usinRealAcbStr = String(usinRealAcbRaw).trim();
+                const temAcabamento  = usinRealAcbStr && usinRealAcbStr !== '-' && usinRealAcbStr !== '';
+                const isFinalizada   = temAcabamento && usinRealAcbInfo.dataObjeto;
+
+                // Item Expedido: fica fora da listagem/card "Total" por padrão, só aparece em "Liberadas"
+                const isExpedido = ['EXPEDIDO','EXPEDIDOS'].includes(normalizarTextoParaFiltro(statusUs));
+
+                // ATRASO geral: Usin.Real (Acabamento) vs Prazo Contratual; se ainda não realizada, hoje vs Prazo
+                let isAtrasado = false;
+                const prazoObj = prazoContraInfo.dataObjeto;
+                if (prazoObj) {
+                    const pz = new Date(prazoObj); pz.setHours(0,0,0,0);
+                    if (temAcabamento) {
+                        const rA = new Date(usinRealAcbInfo.dataObjeto); rA.setHours(0,0,0,0);
+                        if (rA > pz) isAtrasado = true;
+                    } else if (hoje > pz) {
+                        isAtrasado = true;
+                    }
+                }
+
+                // Atraso específico de Fund. Prev. (Acabamento): compara com Fund. Real (Acabamento), ou hoje se ainda não realizada
+                const fundRealAcbStr = String(fundRealAcbRaw).trim();
+                const temFundRealAcb = fundRealAcbStr && fundRealAcbStr !== '-' && fundRealAcbStr !== '';
+                const atrasoAcb = calcularDiasAtrasoMg(fundPrevAcbInfo.dataObjeto, temFundRealAcb ? fundRealAcbInfo.dataObjeto : null, hoje);
+
+                if (!isExpedido) {
+                    total++;
+                    if (isAtrasado) atrasos++;
+                } else {
+                    expedidos++;
+                }
+
+                manganesListaOriginal.push({
+                    os, item, cliente, peca, descricao, statusUs, recurso, obs,
+                    prazoContraStr: prazoContraInfo.stringLegivel, prazoContraObj: prazoContraInfo.dataObjeto,
+                    fundPrevAcb: fundPrevAcbInfo.stringLegivel, fundPrevAcbObj: fundPrevAcbInfo.dataObjeto,
+                    fundRealAcb: fundRealAcbInfo.stringLegivel,
+                    usinPrevAcb: usinPrevAcbInfo.stringLegivel,
+                    usinRealAcb: usinRealAcbInfo.stringLegivel,
+                    isFinalizada, isAtrasado, isExpedido,
+                    atrasoFundAcb: atrasoAcb.atrasado, diasAtrasoFundAcb: atrasoAcb.dias
+                });
+            });
+
+            // Sort: Prazo Contratual → Cliente → Descrição
+            manganesListaOriginal.sort((a,b) => {
+                const da = a.prazoContraObj, db = b.prazoContraObj;
+                if (da && !db) return -1; if (!da && db) return 1;
+                if (da && db) { const dif = new Date(da) - new Date(db); if (dif !== 0) return dif; }
+                const ca = (a.cliente||'').toLowerCase(), cb = (b.cliente||'').toLowerCase();
+                if (ca !== cb) return ca.localeCompare(cb);
+                return (a.descricao||'').toLowerCase().localeCompare((b.descricao||'').toLowerCase());
+            });
+
+            manganesFiltroAba = 'total';
+
+            areaDestino.innerHTML = `
+                <div class="section-header">
+                    <div class="section-header-line"></div>
+                    <h3>Vendas Industriais · Manganês</h3>
+                </div>
+
+                <section class="cards-grid-6" style="grid-template-columns:repeat(3,1fr)">
+                    <div class="status-card total selected" onclick="manganesFiltrarCard('total',this)">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--card-color)"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="1"/></svg>
+                        </div>
+                        <div class="card-meta"><div class="card-title">Total</div><div class="card-value" id="div-mg-card-total">${total}</div></div>
+                    </div>
+                    <div class="status-card atrasos" onclick="manganesFiltrarCard('atrasos',this)">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--card-color)"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        </div>
+                        <div class="card-meta"><div class="card-title">Atrasos</div><div class="card-value" id="div-mg-card-atr">${atrasos}</div></div>
+                    </div>
+                    <div class="status-card liberadas" onclick="manganesFiltrarCard('liberadas',this)">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--card-color)"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                        </div>
+                        <div class="card-meta"><div class="card-title">Liberadas</div><div class="card-value" id="div-mg-card-lib">${expedidos}</div></div>
+                    </div>
+                </section>
+
+                <div class="table-card">
+                    <div class="table-title-area">
+                        <div id="div-mg-table-title" class="table-title-text">Todos os Registros</div>
+                        <div id="div-mg-record-count" class="table-record-count">${total} itens</div>
+                    </div>
+                    <div class="scroll-hint-mobile" id="scroll-hint-manganes">↔ Arraste a tabela para o lado para ver mais colunas</div>
+                    <div class="table-wrapper" id="table-wrapper-manganes">
+                        <table class="data-table" id="tbl-manganes">
+                            <thead>
+                                <tr>
+                                    <th>O.S.</th>
+                                    <th>Cliente</th>
+                                    <th>Peça</th>
+                                    <th>Descrição</th>
+                                    <th class="th-sort" data-sort="prazoContraObj" onclick="manganesOrdenar('prazoContraObj', this)">Prazo Contratual <span class="sort-arrow"></span></th>
+                                    <th class="th-sort" data-sort="fundPrevAcbObj" onclick="manganesOrdenar('fundPrevAcbObj', this)">Fund. Prev. Acab. <span class="sort-arrow"></span></th>
+                                    <th class="th-sort" style="text-align:center" data-sort="diasAtrasoFundAcb" onclick="manganesOrdenar('diasAtrasoFundAcb', this)">Dias Atraso <span class="sort-arrow"></span></th>
+                                    <th>Fund. Real Acab.</th>
+                                    <th>Usin.Prev. Acab.</th>
+                                    <th>Usin.Real Acab.</th>
+                                    <th>Status</th>
+                                    <th>Recurso</th>
+                                    <th>Obs.</th>
+                                </tr>
+                                <tr class="filter-row">
+                                    <td><select id="mgf-os" class="table-filter-select"></select></td>
+                                    <td><select id="mgf-cli" class="table-filter-select"></select></td>
+                                    <td><select id="mgf-peca" class="table-filter-select"></select></td>
+                                    <td><select id="mgf-desc" class="table-filter-select"></select></td>
+                                    <td><select id="mgf-prazo" class="table-filter-select"></select></td>
+                                    <td></td><td></td><td></td><td></td><td></td>
+                                    <td><select id="mgf-status" class="table-filter-select"></select></td>
+                                    <td></td>
+                                    <td><input type="text" id="mgf-obs" class="table-filter-input" placeholder="Buscar..."></td>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-manganes"></tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            // Populate filter dropdowns
+            const populateSelectMg = (id, values) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const uniq = [...new Set(values.filter(v=>v&&String(v).trim()!=''))].sort((a,b)=>String(a).localeCompare(String(b)));
+                el.innerHTML = '<option value="">Todos</option>';
+                uniq.forEach(v => {
+                    const o = document.createElement('option');
+                    o.value = normalizarTextoParaFiltro(String(v));
+                    o.textContent = v;
+                    el.appendChild(o);
+                });
+            };
+            populateSelectMg('mgf-os',     manganesListaOriginal.map(r=>r.os));
+            populateSelectMg('mgf-cli',    manganesListaOriginal.map(r=>r.cliente));
+            populateSelectMg('mgf-peca',   manganesListaOriginal.map(r=>r.peca));
+            populateSelectMg('mgf-desc',   manganesListaOriginal.map(r=>r.descricao));
+            populateSelectMg('mgf-prazo',  manganesListaOriginal.map(r=>r.prazoContraStr));
+            populateSelectMg('mgf-status', manganesListaOriginal.filter(r=>!r.isExpedido).map(r=>r.statusUs));
+
+            document.querySelectorAll('#tbl-manganes .table-filter-select, #tbl-manganes .table-filter-input').forEach(el => {
+                el.addEventListener('change', manganesRenderizar);
+                el.addEventListener('input', manganesRenderizar);
+            });
+
+            manganesRenderizar();
+            ativarAvisoScrollMobile('table-wrapper-manganes', 'scroll-hint-manganes');
+        }
+
+        function manganesFiltrarCard(aba, el) {
+            document.querySelectorAll('#custom-dashboard-area .status-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            manganesFiltroAba = aba;
+            const titulos = { total:'Todos os Registros', atrasos:'Itens em Atraso', liberadas:'Itens Liberados (Finalizados)' };
+            document.getElementById('div-mg-table-title').textContent = titulos[aba] || 'Todos';
+            manganesRenderizar();
+        }
+
+        function manganesOrdenar(campo, thEl) {
+            if (manganesOrdenacao.campo === campo) {
+                manganesOrdenacao.dir *= -1;
+            } else {
+                manganesOrdenacao = { campo, dir: 1 };
+            }
+            document.querySelectorAll('#tbl-manganes .th-sort').forEach(th => {
+                th.classList.remove('sort-active');
+                th.querySelector('.sort-arrow').textContent = '';
+            });
+            thEl.classList.add('sort-active');
+            thEl.querySelector('.sort-arrow').textContent = manganesOrdenacao.dir === 1 ? '▲' : '▼';
+            manganesRenderizar();
+        }
+
+        function manganesRenderizar() {
+            const tbody = document.getElementById('tbody-manganes');
+            if (!tbody) return;
+
+            const fOs     = document.getElementById('mgf-os')?.value||'';
+            const fCli    = document.getElementById('mgf-cli')?.value||'';
+            const fPeca   = document.getElementById('mgf-peca')?.value||'';
+            const fDesc   = document.getElementById('mgf-desc')?.value||'';
+            const fPrazo  = document.getElementById('mgf-prazo')?.value||'';
+            const fStatus = document.getElementById('mgf-status')?.value||'';
+            const fObs    = normalizarTextoParaFiltro(document.getElementById('mgf-obs')?.value||'');
+
+            let lista = manganesListaOriginal.filter(r => {
+                if (manganesFiltroAba === 'liberadas') { if (!r.isExpedido) return false; }
+                else if (r.isExpedido) return false;
+                if (manganesFiltroAba === 'atrasos' && !r.isAtrasado) return false;
+                if (fOs    && normalizarTextoParaFiltro(r.os)        !== fOs)    return false;
+                if (fCli   && normalizarTextoParaFiltro(r.cliente)   !== fCli)   return false;
+                if (fPeca  && normalizarTextoParaFiltro(r.peca)      !== fPeca)  return false;
+                if (fDesc  && normalizarTextoParaFiltro(r.descricao) !== fDesc)  return false;
+                if (fPrazo && normalizarTextoParaFiltro(r.prazoContraStr) !== fPrazo) return false;
+                if (fStatus&& normalizarTextoParaFiltro(r.statusUs)  !== fStatus)return false;
+                if (fObs   && !normalizarTextoParaFiltro(r.obs).includes(fObs))  return false;
+                return true;
+            });
+
+            if (manganesOrdenacao.campo) {
+                const campo = manganesOrdenacao.campo, dir = manganesOrdenacao.dir;
+                lista = [...lista].sort((a, b) => {
+                    const va = a[campo], vb = b[campo];
+                    if (!va && !vb) return 0;
+                    if (!va) return 1;
+                    if (!vb) return -1;
+                    return (new Date(va) - new Date(vb)) * dir;
+                });
+            }
+
+            document.getElementById('div-mg-record-count').textContent = `${lista.length} ${lista.length===1?'item':'itens'}`;
+
+            tbody.innerHTML = '';
+            if (lista.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro encontrado.</td></tr>`;
+                return;
+            }
+
+            lista.forEach(r => {
+                const tr = document.createElement('tr');
+                if (r.isFinalizada || r.isExpedido) tr.classList.add('row-finalizada');
+                if (r.isAtrasado)   tr.classList.add('row-atrasada');
+
+                const recursoHTML = renderRecursoOrcado(r.recurso);
+
+                let obsHTML = '';
+                if (r.obs && r.obs!=='undefined' && r.obs!=='0' && r.obs!=='nan') {
+                    const txt = r.obs.replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/\n/g,' ');
+                    obsHTML = `<button class="btn-obs-trigger" onclick="abrirModalObservacao('${txt}')" title="Ver nota">💬</button>`;
+                }
+
+                const statusBadge = (r.isFinalizada || r.isExpedido)
+                    ? `<span class="badge-status-usinagem" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3)">✔ Finalizado</span>`
+                    : `<span class="badge-status-usinagem">${r.statusUs||'—'}</span>`;
+
+                tr.innerHTML = `
+                    <td><b style="color:var(--text-1)">${r.os||'—'}</b></td>
+                    <td>${r.cliente||'—'}</td>
+                    <td style="color:var(--text-2)">${r.peca||'—'}</td>
+                    <td style="color:var(--text-2)">${r.descricao||'—'}</td>
+                    <td style="color:${r.isAtrasado?'#ef4444':'var(--text-1)'};font-weight:${r.isAtrasado?'600':'400'}">${r.prazoContraStr||'—'}</td>
+                    <td style="color:${r.atrasoFundAcb?'#ef4444':'var(--text-2)'};font-weight:${r.atrasoFundAcb?'700':'400'}">${r.fundPrevAcb||'—'}</td>
+                    <td style="text-align:center;color:${r.atrasoFundAcb?'#ef4444':'var(--text-3)'};font-weight:${r.atrasoFundAcb?'700':'400'}">${r.atrasoFundAcb?(r.diasAtrasoFundAcb+'d'):'—'}</td>
+                    <td style="color:var(--text-2)">${r.fundRealAcb||'—'}</td>
+                    <td style="color:var(--text-2)">${r.usinPrevAcb||'—'}</td>
+                    <td style="color:${r.isFinalizada?'#10b981':'var(--text-2)'};font-weight:${r.isFinalizada?'500':'400'}">${r.usinRealAcb||'—'}</td>
                     <td>${statusBadge}</td>
                     <td>${recursoHTML}</td>
                     <td class="centralized-status">${obsHTML}</td>
