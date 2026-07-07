@@ -1315,7 +1315,7 @@
                     isLiberada = !['AG FUNDIDO','AG. FUNDIDO','AG FUSÃO','AG. FUSÃO'].includes(_statusRef);
                 }
                 let isProcesso   = ['EM USINAGEM','USINAGEM LPB','PLAINANDO'].includes(_statusRef);
-                let isFinalizada = ['AG COLETAR','AG. COLETAR'].includes(_statusRef);
+                let isFinalizada = ['AG COLETAR','AG. COLETAR','AG COLETA','AG. COLETA'].includes(_statusRef);
                 let isExpedido   = ['EXPEDIDO','EXPEDIDOS'].includes(_statusRef);
                 let isAtrasado=false, isProximaEntrega=false;
 
@@ -1335,7 +1335,7 @@
                         const dpe = new Date(dataEntregaInfo.dataObjeto);
                         dpe.setHours(0,0,0,0);
                         const diff = Math.ceil((dpe - hoje)/(1000*60*60*24));
-                        if (!['AG COLETAR','AG. COLETAR','EXPEDIDO','EXPEDIDOS'].includes(statusUsinagem)) {
+                        if (!['AG COLETAR','AG. COLETAR','AG COLETA','AG. COLETA','EXPEDIDO','EXPEDIDOS'].includes(statusUsinagem)) {
                             if (dpe < hoje) isAtrasado = true;
                             else if (diff>=0 && diff<=15) isProximaEntrega = true;
                         }
