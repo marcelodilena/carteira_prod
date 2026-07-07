@@ -1834,6 +1834,7 @@
                 const usinPrevDsbRaw = buscarValor(linha,'Usin. Prev.\n(Desbaste)')||buscarValor(linha,'UsinPrevDesbaste')||'';
                 const usinRealDsbRaw = buscarValor(linha,'Usin. Real\n(Desbaste)')||buscarValor(linha,'UsinRealDesbaste')||'';
                 const fundPrevAcbRaw = buscarValor(linha,'Fund. Prev.\n(Acabamento)')||buscarValor(linha,'FundPrevAcabamento')||'';
+                const fundRealAcbRaw = buscarValor(linha,'Fund. Real\n(Acabamento)')||buscarValor(linha,'FundRealAcabamento')||'';
                 const usinPrevAcbRaw = buscarValor(linha,'Usin. Prev.\n(Acabamento)')||buscarValor(linha,'UsinPrevAcabamento')||'';
                 const usinRealAcbRaw = buscarValor(linha,'Usin. Real\n(Acabamento)')||buscarValor(linha,'UsinRealAcabamento')||'';
 
@@ -1845,6 +1846,7 @@
                 const usinPrevDsbInfo  = formatarDataExcel(usinPrevDsbRaw);
                 const usinRealDsbInfo  = formatarDataExcel(usinRealDsbRaw);
                 const fundPrevAcbInfo  = formatarDataExcel(fundPrevAcbRaw);
+                const fundRealAcbInfo  = formatarDataExcel(fundRealAcbRaw);
                 const usinPrevAcbInfo  = formatarDataExcel(usinPrevAcbRaw);
                 const usinRealAcbInfo  = formatarDataExcel(usinRealAcbRaw);
 
@@ -1896,6 +1898,7 @@
                     usinPrevDsb: usinPrevDsbInfo.stringLegivel,
                     usinRealDsb: usinRealDsbInfo.stringLegivel,
                     fundPrevAcb: fundPrevAcbInfo.stringLegivel, fundPrevAcbObj: fundPrevAcbInfo.dataObjeto,
+                    fundRealAcb: fundRealAcbInfo.stringLegivel,
                     usinPrevAcb: usinPrevAcbInfo.stringLegivel,
                     usinRealAcb: usinRealAcbInfo.stringLegivel,
                     isFinalizada, isAtrasado, isExpedido
@@ -1961,7 +1964,8 @@
                                     <th>Fund.Real Desb.</th>
                                     <th>Usin.Prev. Desb.</th>
                                     <th>Usin.Real Desb.</th>
-                                    <th class="th-sort" data-sort="fundPrevAcbObj" onclick="diversosOrdenar('fundPrevAcbObj', this)">Fund. Acab. Previsto <span class="sort-arrow"></span></th>
+                                    <th class="th-sort" data-sort="fundPrevAcbObj" onclick="diversosOrdenar('fundPrevAcbObj', this)">Fund. Prev. Acab. <span class="sort-arrow"></span></th>
+                                    <th>Fund. Real Acab.</th>
                                     <th>Usin.Prev. Acab.</th>
                                     <th>Usin.Real Acab.</th>
                                     <th>Status Usin.</th>
@@ -1975,7 +1979,7 @@
                                     <td><select id="df-desc" class="table-filter-select"></select></td>
                                     <td></td>
                                     <td><select id="df-prazo" class="table-filter-select"></select></td>
-                                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
                                     <td><select id="df-status" class="table-filter-select"></select></td>
                                     <td></td>
                                     <td><input type="text" id="df-obs" class="table-filter-input" placeholder="Buscar..."></td>
@@ -1986,7 +1990,7 @@
                                 <tr>
                                     <td colspan="4" style="text-align:right;color:var(--text-2)">SOMA TOTAL DAS PEÇAS:</td>
                                     <td id="df-soma" style="text-align:center;color:var(--accent);font-size:1rem;font-weight:700">0</td>
-                                    <td colspan="11"></td>
+                                    <td colspan="12"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -2092,7 +2096,7 @@
 
             tbody.innerHTML = '';
             if (lista.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="16" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro encontrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="17" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro encontrado.</td></tr>`;
                 return;
             }
 
@@ -2138,6 +2142,7 @@
                     <td style="color:var(--text-2)">${r.usinPrevDsb||'—'}</td>
                     <td style="color:${usinAcbEmpty&&refIsLate?'#ef4444':'var(--text-2)'}">${r.usinRealDsb||'—'}</td>
                     <td style="color:var(--text-2)">${r.fundPrevAcb||'—'}</td>
+                    <td style="color:var(--text-2)">${r.fundRealAcb||'—'}</td>
                     <td style="color:var(--text-2)">${r.usinPrevAcb||'—'}</td>
                     <td style="color:${!usinAcbEmpty&&refIsLate?'#ef4444':r.isFinalizada?'#10b981':'var(--text-2)'};font-weight:${r.isFinalizada?'500':'400'}">${r.usinRealAcb||'—'}</td>
                     <td>${statusBadge}</td>
