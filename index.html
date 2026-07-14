@@ -1283,18 +1283,19 @@
                 const qtdNum    = parseInt(qtdRaw)||0;
                 const pzFundidoCru = buscarValor(linha,'Prazo Fund')||buscarValor(linha,'Prazo Fundido')||buscarValor(linha,'Data Prev. Fundido');
                 const pzEntregaCru = buscarValor(linha,'Prazo Entrega')||buscarValor(linha,'Data Prev. Entrega')||buscarValor(linha,'Prazo\nEntrega\nEixo')||buscarValor(linha,'Prazo Entrega Eixo');
-                const statusUsinagemCru = buscarValor(linha,'Status Usinagem')||buscarValor(linha,'Status');
+                const statusUsinagemCru = buscarValor(linha,'Status Usinagem')||buscarValor(linha,'Status Us.')||buscarValor(linha,'Status');
                 const observacaoCru = String(buscarValor(linha,'Observação')||buscarValor(linha,'Observacao')||buscarValor(linha,'Obs')).trim();
                 const statusUsinagem = normalizarTextoParaFiltro(statusUsinagemCru);
                 const des      = String(buscarValor(linha,'Des')||buscarValor(linha,'Des. Engenharia')).trim();
                 const plainar  = String(buscarValor(linha,'Plainar')||buscarValor(linha,'Desb.')).trim();
                 const facear   = String(buscarValor(linha,'Facear')||buscarValor(linha,'T.T.')).trim();
                 const serrar   = String(buscarValor(linha,'Serrar')||buscarValor(linha,'Us. Final')).trim();
-                const soldadura= String(buscarValor(linha,'Solda Dura')||buscarValor(linha,'Fundo D.')).trim();
+                const soldadura= String(buscarValor(linha,'Solda Dura')||buscarValor(linha,'Fundo D.')||buscarValor(linha,'S. Dura')).trim();
                 const encaixe  = String(buscarValor(linha,'Encaixe')||buscarValor(linha,'Acabam')).trim();
-                const furacao  = String(buscarValor(linha,'Furação')||buscarValor(linha,'Furação/Rosca')).trim();
-                const acabam   = String(buscarValor(linha,'Acabam.')||buscarValor(linha,'Acabam Insp.')).trim();
-                const liberacao= String(buscarValor(linha,'Liberação')).trim();
+                const furacao  = String(buscarValor(linha,'Furação')||buscarValor(linha,'Furação/Rosca')||buscarValor(linha,'Fur.')).trim();
+                const acabam   = String(buscarValor(linha,'Acabam.')||buscarValor(linha,'Acabam Insp.')||buscarValor(linha,'Acab.')).trim();
+                const liberacao= String(buscarValor(linha,'Liberação')||buscarValor(linha,'Liber.')).trim();
+                const perfil   = String(buscarValor(linha,'Perfil')).trim();
 
                 // Campos específicos CAMISA
                 const bit           = String(buscarValor(linha,'Bit')||buscarValor(linha,'Bit.')||'').trim();
@@ -1367,7 +1368,7 @@
                         pzFundidoStr:dataFundidoInfo.stringLegivel,pzFundidoObj:dataFundidoInfo.dataObjeto,pzEntregaStr:dataEntregaInfo.stringLegivel,
                         pzEntregaObj:dataEntregaInfo.dataObjeto,statusUsinagem:String(statusUsinagemCru).trim(),
                         observacao:observacaoCru,atrasadoVisual:isAtrasado,proximaVisual:isProximaEntrega,
-                        des,plainar,facear,serrar,soldadura,encaixe,furacao,acabam,liberacao,
+                        des,plainar,facear,serrar,soldadura,encaixe,furacao,acabam,liberacao,perfil,
                         // Campos Camisa
                         bit, tipoCamisa, posCamisa, terno, forma,
                         recursoCamisa: recursoCamisaPendente,
@@ -1496,9 +1497,9 @@
             } else {
                 let adicionaisCol='', adicionaisFiltro='';
                 if (tipoProduto==="BAGACEIRAS") {
-                    colspanRestante=11;
-                    adicionaisCol=`${thOrdenavel('DES.','des',true)}${thOrdenavel('PLAINAR','plainar',true)}${thOrdenavel('FACEAR','facear',true)}${thOrdenavel('SERRAR','serrar',true)}${thOrdenavel('SOLDA DURA','soldadura',true)}${thOrdenavel('ENCAIXE','encaixe',true)}${thOrdenavel('FURAÇÃO','furacao',true)}${thOrdenavel('ACABAM.','acabam',true)}${thOrdenavel('LIBERAÇÃO','liberacao',true)}${thOrdenavel('STATUS USINAGEM','statusUsinagem')}`;
-                    adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-plainar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-facear" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-serrar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-furacao" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-acabam" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-liberacao" class="table-filter-select"></select></td><td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
+                    colspanRestante=10;
+                    adicionaisCol=`${thOrdenavel('DES.','des',true)}${thOrdenavel('PERFIL','perfil',true)}${thOrdenavel('SERRAR','serrar',true)}${thOrdenavel('SOLDA DURA','soldadura',true)}${thOrdenavel('ENCAIXE','encaixe',true)}${thOrdenavel('FURAÇÃO','furacao',true)}${thOrdenavel('ACABAM.','acabam',true)}${thOrdenavel('LIBERAÇÃO','liberacao',true)}${thOrdenavel('STATUS USINAGEM','statusUsinagem')}`;
+                    adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-perfil" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-serrar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-furacao" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-acabam" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-liberacao" class="table-filter-select"></select></td><td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
                 } else if (tipoProduto==="PENTES") {
                     colspanRestante=3;
                     adicionaisCol=`${thOrdenavel('DES. ENG.','des',true)}${thOrdenavel('STATUS USINAGEM','statusUsinagem')}`;
@@ -1567,6 +1568,7 @@
                 {id:'filtro-col-qtd',chave:'qtd'},{id:'filtro-col-pzfundido',chave:'pzFundidoStr'},
                 {id:'filtro-col-pzentrega',chave:'pzEntregaStr'},{id:'filtro-col-des',chave:'des'},
                 {id:'filtro-col-plainar',chave:'plainar'},{id:'filtro-col-facear',chave:'facear'},
+                {id:'filtro-col-perfil',chave:'perfil'},
                 {id:'filtro-col-serrar',chave:'serrar'},{id:'filtro-col-soldadura',chave:'soldadura'},
                 {id:'filtro-col-encaixe',chave:'encaixe'},{id:'filtro-col-furacao',chave:'furacao'},
                 {id:'filtro-col-acabam',chave:'acabam'},{id:'filtro-col-liberacao',chave:'liberacao'},
@@ -1614,6 +1616,7 @@
                 fObs:     normalizarTextoParaFiltro(document.getElementById('filtro-col-obs')?.value||''),
                 fDes:     document.getElementById('filtro-col-des')?.value||'',
                 fPlainar: document.getElementById('filtro-col-plainar')?.value||'',
+                fPerfil: document.getElementById('filtro-col-perfil')?.value||'',
                 fFacear:  document.getElementById('filtro-col-facear')?.value||'',
                 fSerrar:  document.getElementById('filtro-col-serrar')?.value||'',
                 fSoldadura: document.getElementById('filtro-col-soldadura')?.value||'',
@@ -1649,6 +1652,7 @@
                 if (f.fObs     && !normalizarTextoParaFiltro(vf.observacao).includes(f.fObs)) return false;
                 if (f.fDes     && normalizarTextoParaFiltro(vf.des)       !== f.fDes)     return false;
                 if (f.fPlainar && normalizarTextoParaFiltro(vf.plainar)   !== f.fPlainar) return false;
+                if (f.fPerfil  && normalizarTextoParaFiltro(vf.perfil)    !== f.fPerfil)  return false;
                 if (f.fFacear  && normalizarTextoParaFiltro(vf.facear)    !== f.fFacear)  return false;
                 if (f.fSerrar  && normalizarTextoParaFiltro(vf.serrar)    !== f.fSerrar)  return false;
                 if (f.fSoldadura && normalizarTextoParaFiltro(vf.soldadura) !== f.fSoldadura) return false;
@@ -1711,7 +1715,7 @@
             atualizarCardsFiltrados(linhasFiltrosColuna);
 
             if (linhas.length===0) {
-                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?19:(nomeAbaAtiva==="PENTES"?11:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?17:(nomeAbaAtiva==="RODETES NOVOS"?17:(nomeAbaAtiva==="EIXOS"?14:16))))));
+                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?18:(nomeAbaAtiva==="PENTES"?11:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?17:(nomeAbaAtiva==="RODETES NOVOS"?17:(nomeAbaAtiva==="EIXOS"?14:16))))));
                 tbody.innerHTML=`<tr><td colspan="${totalColspan}" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro corresponde aos filtros aplicados.</td></tr>`;
                 return;
             }
@@ -1791,7 +1795,7 @@
                 } else {
                     let adicionais='';
                     if (nomeAbaAtiva==="BAGACEIRAS") {
-                        adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td class="centralized-status">${formatarStatusComIcone(vf.plainar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.facear)}</td><td class="centralized-status">${formatarStatusComIcone(vf.serrar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.soldadura)}</td><td class="centralized-status">${formatarStatusComIcone(vf.encaixe)}</td><td class="centralized-status">${formatarStatusComIcone(vf.furacao)}</td><td class="centralized-status">${formatarStatusComIcone(vf.acabam)}</td><td class="centralized-status">${formatarStatusComIcone(vf.liberacao)}</td><td>${statusBadge(vf.statusUsinagem)}</td>`;
+                        adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td class="centralized-status">${formatarStatusComIcone(vf.perfil)}</td><td class="centralized-status">${formatarStatusComIcone(vf.serrar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.soldadura)}</td><td class="centralized-status">${formatarStatusComIcone(vf.encaixe)}</td><td class="centralized-status">${formatarStatusComIcone(vf.furacao)}</td><td class="centralized-status">${formatarStatusComIcone(vf.acabam)}</td><td class="centralized-status">${formatarStatusComIcone(vf.liberacao)}</td><td>${statusBadge(vf.statusUsinagem)}</td>`;
                     } else if (nomeAbaAtiva==="PENTES") {
                         adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td>${statusBadge(vf.statusUsinagem)}</td>`;
                     } else if (nomeAbaAtiva==="RODETES NOVOS") {
