@@ -30,6 +30,7 @@
             --row-border:       rgba(15,23,42,0.08);
             --row-border-light: rgba(15,23,42,0.05);
             --row-stripe:       rgba(15,23,42,0.025);
+            --row-hover:        rgba(100,116,139,0.14);
 
             --c-total:      #2563eb;
             --c-liberadas:  #0891b2;
@@ -400,9 +401,9 @@
             word-break: break-word;
         }
         .data-table td:last-child { border-right: none; }
-        .data-table tr:hover td { background: var(--surface-2); }
+        .data-table tr:hover td { background: var(--row-hover); }
         .data-table tr:nth-child(even) td { background: var(--row-stripe); }
-        .data-table tr:nth-child(even):hover td { background: var(--surface-2); }
+        .data-table tr:nth-child(even):hover td { background: var(--row-hover); }
 
         .data-table tfoot { position: sticky; bottom: 0; z-index: 10; }
         .data-table tfoot td {
@@ -728,7 +729,7 @@
             }
             .data-table thead th:first-child { z-index: 11; }
             .data-table tr:nth-child(even) td:first-child { background: #f3f4f7; }
-            .data-table tr:hover td:first-child { background: var(--surface-2); }
+            .data-table tr:hover td:first-child { background: var(--row-hover); }
 
             /* Aviso de scroll horizontal — some sozinho assim que o usuário arrasta */
             .scroll-hint-mobile {
@@ -1467,17 +1468,17 @@
             } else {
                 let adicionaisCol='', adicionaisFiltro='';
                 if (tipoProduto==="BAGACEIRAS") {
-                    colspanRestante=10;
-                    adicionaisCol=`<th style="text-align:center">DES.</th><th style="text-align:center">PLAINAR</th><th style="text-align:center">FACEAR</th><th style="text-align:center">SERRAR</th><th style="text-align:center">SOLDA DURA</th><th style="text-align:center">ENCAIXE</th><th style="text-align:center">FURAÇÃO</th><th style="text-align:center">ACABAM.</th><th style="text-align:center">LIBERAÇÃO</th>`;
-                    adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-plainar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-facear" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-serrar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-furacao" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-acabam" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
+                    colspanRestante=11;
+                    adicionaisCol=`<th style="text-align:center">DES.</th><th style="text-align:center">PLAINAR</th><th style="text-align:center">FACEAR</th><th style="text-align:center">SERRAR</th><th style="text-align:center">SOLDA DURA</th><th style="text-align:center">ENCAIXE</th><th style="text-align:center">FURAÇÃO</th><th style="text-align:center">ACABAM.</th><th style="text-align:center">LIBERAÇÃO</th><th>STATUS USINAGEM</th>`;
+                    adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-plainar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-facear" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-serrar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-furacao" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-acabam" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-liberacao" class="table-filter-select"></select></td><td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
                 } else if (tipoProduto==="PENTES") {
                     colspanRestante=3;
                     adicionaisCol=`<th style="text-align:center">DES. ENG.</th><th>STATUS USINAGEM</th>`;
                     adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
                 } else if (tipoProduto==="RODETES NOVOS") {
-                    colspanRestante=8;
-                    adicionaisCol=`<th style="text-align:center">DES.</th><th style="text-align:center">DESB.</th><th style="text-align:center">T.T.</th><th style="text-align:center">US. FINAL</th><th style="text-align:center">FUNDO D.</th><th style="text-align:center">ACABAM</th><th style="text-align:center">LIBERAÇÃO</th>`;
-                    adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-plainar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-facear" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-serrar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
+                    colspanRestante=9;
+                    adicionaisCol=`<th style="text-align:center">DES.</th><th style="text-align:center">DESB.</th><th style="text-align:center">T.T.</th><th style="text-align:center">US. FINAL</th><th style="text-align:center">FUNDO D.</th><th style="text-align:center">ACABAM</th><th style="text-align:center">LIBERAÇÃO</th><th>STATUS USINAGEM</th>`;
+                    adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-plainar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-facear" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-serrar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-liberacao" class="table-filter-select"></select></td><td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
                 }
                 colunasHTML=`<th>PV / OS</th><th>Cliente</th><th>Peça</th><th>Seq.</th><th>Descrição</th><th style="text-align:center">Qtde.</th><th>Prazo Fundido</th><th>Prazo Entrega</th>${adicionaisCol}`;
                 colunasFiltroHTML=`<td><select id="filtro-col-pv" class="table-filter-select"></select></td><td><select id="filtro-col-cliente" class="table-filter-select"></select></td><td><select id="filtro-col-peca" class="table-filter-select"></select></td><td><select id="filtro-col-seq" class="table-filter-select"></select></td><td><select id="filtro-col-desc" class="table-filter-select"></select></td><td><select id="filtro-col-qtd" class="table-filter-select"></select></td><td><input type="text" id="filtro-col-pzfundido" class="table-filter-input" placeholder="ex: 07/2026"></td><td><input type="text" id="filtro-col-pzentrega" class="table-filter-input" placeholder="ex: 07/2026"></td>${adicionaisFiltro}`;
@@ -1661,7 +1662,7 @@
             atualizarCardsFiltrados(linhasFiltrosColuna);
 
             if (linhas.length===0) {
-                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?18:(nomeAbaAtiva==="PENTES"?11:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?17:16))));
+                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?19:(nomeAbaAtiva==="PENTES"?11:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?17:(nomeAbaAtiva==="RODETES NOVOS"?17:16)))));
                 tbody.innerHTML=`<tr><td colspan="${totalColspan}" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro corresponde aos filtros aplicados.</td></tr>`;
                 return;
             }
@@ -1725,11 +1726,11 @@
                 } else {
                     let adicionais='';
                     if (nomeAbaAtiva==="BAGACEIRAS") {
-                        adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td class="centralized-status">${formatarStatusComIcone(vf.plainar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.facear)}</td><td class="centralized-status">${formatarStatusComIcone(vf.serrar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.soldadura)}</td><td class="centralized-status">${formatarStatusComIcone(vf.encaixe)}</td><td class="centralized-status">${formatarStatusComIcone(vf.furacao)}</td><td class="centralized-status">${formatarStatusComIcone(vf.acabam)}</td><td class="centralized-status">${formatarStatusComIcone(vf.liberacao)}</td>`;
+                        adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td class="centralized-status">${formatarStatusComIcone(vf.plainar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.facear)}</td><td class="centralized-status">${formatarStatusComIcone(vf.serrar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.soldadura)}</td><td class="centralized-status">${formatarStatusComIcone(vf.encaixe)}</td><td class="centralized-status">${formatarStatusComIcone(vf.furacao)}</td><td class="centralized-status">${formatarStatusComIcone(vf.acabam)}</td><td class="centralized-status">${formatarStatusComIcone(vf.liberacao)}</td><td>${statusBadge(vf.statusUsinagem)}</td>`;
                     } else if (nomeAbaAtiva==="PENTES") {
                         adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td>${statusBadge(vf.statusUsinagem)}</td>`;
                     } else if (nomeAbaAtiva==="RODETES NOVOS") {
-                        adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td class="centralized-status">${formatarStatusComIcone(vf.plainar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.facear)}</td><td class="centralized-status">${formatarStatusComIcone(vf.serrar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.soldadura)}</td><td class="centralized-status">${formatarStatusComIcone(vf.encaixe)}</td><td class="centralized-status">${formatarStatusComIcone(vf.liberacao)}</td>`;
+                        adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td class="centralized-status">${formatarStatusComIcone(vf.plainar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.facear)}</td><td class="centralized-status">${formatarStatusComIcone(vf.serrar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.soldadura)}</td><td class="centralized-status">${formatarStatusComIcone(vf.encaixe)}</td><td class="centralized-status">${formatarStatusComIcone(vf.liberacao)}</td><td>${statusBadge(vf.statusUsinagem)}</td>`;
                     }
                     tr.innerHTML=`
                         <td><b style="color:var(--text-1)">${vf.pv||'—'}</b></td>
