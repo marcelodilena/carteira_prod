@@ -30,7 +30,7 @@
             --row-border:       rgba(15,23,42,0.08);
             --row-border-light: rgba(15,23,42,0.05);
             --row-stripe:       rgba(15,23,42,0.025);
-            --row-hover:        rgba(100,116,139,0.14);
+            --row-hover:        rgba(250,204,21,0.28);
 
             --c-total:      #2563eb;
             --c-liberadas:  #0891b2;
@@ -1189,6 +1189,10 @@
             const concluidasN = etapas.filter(e => e.concluida).length;
             return `<span class="recurso-camisa">${partes.join(' / ')}<span class="recurso-camisa-contador">${concluidasN}/${etapas.length} etapas concluídas</span></span>`;
         }
+        // Gera um <th> clicável para ordenação da tabela principal (ver painelOrdenar).
+        function thOrdenavel(label, campo, centralizado) {
+            return `<th class="th-sort"${centralizado?' style="text-align:center"':''} data-sort="${campo}" onclick="painelOrdenar('${campo}', this)">${label}<span class="sort-arrow"></span></th>`;
+        }
         function formatarStatusComIcone(val) {
             const limpo = String(val||'').trim().toUpperCase().replace(/[\.\s]/g,'');
             if (limpo==='OK') return `<div class="centralized-status"><div><span class="badge-etapa ok">OK</span></div></div>`;
@@ -1261,6 +1265,7 @@
             }
 
             filtroCardAtivo = 'total';
+            painelOrdenacao = { campo: null, dir: 1 };
             let total=0,liberadas=0,emProcesso=0,finalizadas=0,expedidos=0,atrasos=0,proximasEntregas=0;
             listaOriginalVálida = [];
 
@@ -1359,7 +1364,7 @@
                 let dataFundidoInfo = formatarDataExcel(pzFundidoCru);
                 listaOriginalVálida.push({
                     valoresFormatados: { pv,item:itemNum,cliente,peca,seq,descricao,qtd:qtdNum,
-                        pzFundidoStr:dataFundidoInfo.stringLegivel,pzEntregaStr:dataEntregaInfo.stringLegivel,
+                        pzFundidoStr:dataFundidoInfo.stringLegivel,pzFundidoObj:dataFundidoInfo.dataObjeto,pzEntregaStr:dataEntregaInfo.stringLegivel,
                         pzEntregaObj:dataEntregaInfo.dataObjeto,statusUsinagem:String(statusUsinagemCru).trim(),
                         observacao:observacaoCru,atrasadoVisual:isAtrasado,proximaVisual:isProximaEntrega,
                         des,plainar,facear,serrar,soldadura,encaixe,furacao,acabam,liberacao,
@@ -1428,7 +1433,7 @@
 
             if (tipoProduto==="CARTEIRA GERAL") {
                 colspanRestante=2;
-                colunasHTML=`<th>PV</th><th>Item</th><th>Cliente</th><th>Descrição</th><th style="text-align:center">Qtd.</th><th>Prazo Entrega</th><th>Status</th>`;
+                colunasHTML=`${thOrdenavel('PV','pv')}${thOrdenavel('Item','item')}${thOrdenavel('Cliente','cliente')}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtd.','qtd',true)}${thOrdenavel('Prazo Entrega','pzEntregaObj')}${thOrdenavel('Status','statusUsinagem')}`;
                 colunasFiltroHTML=`
                     <td><select id="filtro-col-pv" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-item" class="table-filter-select"></select></td>
@@ -1439,7 +1444,7 @@
                     <td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
             } else if (tipoProduto==="CAMISA") {
                 colspanRestante=5;
-                colunasHTML=`<th>PV</th><th>Cliente</th><th>O.S./Peça</th><th>Descrição</th><th style="text-align:center">Qtde.</th><th style="text-align:center">Bit</th><th style="text-align:center">Tipo</th><th style="text-align:center">Pos.</th><th style="text-align:center">Terno</th><th style="text-align:center">Forma</th><th>Prazo Fund.</th><th style="text-align:center">Des.</th><th>Recurso Camisa</th><th>Status Camisa</th><th style="text-align:center">Nº Eixo</th><th>Prazo Entrega</th>`;
+                colunasHTML=`${thOrdenavel('PV','pv')}${thOrdenavel('Cliente','cliente')}${thOrdenavel('O.S./Peça','peca')}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtde.','qtd',true)}${thOrdenavel('Bit','bit',true)}${thOrdenavel('Tipo','tipoCamisa',true)}${thOrdenavel('Pos.','posCamisa',true)}${thOrdenavel('Terno','terno',true)}${thOrdenavel('Forma','forma',true)}${thOrdenavel('Prazo Fund.','pzFundidoObj')}${thOrdenavel('Des.','des',true)}${thOrdenavel('Recurso Camisa','recursoCamisa')}${thOrdenavel('Status Camisa','statusCamisa')}${thOrdenavel('Nº Eixo','nrEixo',true)}${thOrdenavel('Prazo Entrega','pzEntregaCamisaObj')}`;
                 colunasFiltroHTML=`
                     <td><select id="filtro-col-pv" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-cliente" class="table-filter-select"></select></td>
@@ -1459,7 +1464,7 @@
                     <td><input type="text" id="filtro-col-pzentrega-camisa" class="table-filter-input" placeholder="ex: 07/2026"></td>`;
             } else if (tipoProduto==="PERIFÉRICOS") {
                 colspanRestante=4;
-                colunasHTML=`<th>PV</th><th>Cliente</th><th>Cód.</th><th>Seq.</th><th>Descrição</th><th style="text-align:center">Qtd.</th><th>Prazo Fundido</th><th>Prazo Entrega</th><th style="text-align:center">Des.</th><th>Status</th>`;
+                colunasHTML=`${thOrdenavel('PV','pv')}${thOrdenavel('Cliente','cliente')}${thOrdenavel('Cód.','peca')}${thOrdenavel('Seq.','seq')}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtd.','qtd',true)}${thOrdenavel('Prazo Fundido','pzFundidoObj')}${thOrdenavel('Prazo Entrega','pzEntregaObj')}${thOrdenavel('Des.','des',true)}${thOrdenavel('Status','statusUsinagem')}`;
                 colunasFiltroHTML=`
                     <td><select id="filtro-col-pv" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-cliente" class="table-filter-select"></select></td>
@@ -1473,7 +1478,7 @@
                     <td><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
             } else if (tipoProduto==="EIXOS") {
                 colspanRestante=9;
-                colunasHTML=`<th>PV</th><th style="text-align:center">Item</th><th>Cliente</th><th>Descrição</th><th style="text-align:center">Qtde.</th><th style="text-align:center">Bit</th><th style="text-align:center">Pos.</th><th style="text-align:center">Terno</th><th>Prazo Entrega</th><th style="text-align:center">Des.</th><th style="text-align:center">Nº Eixo</th><th>Etapas (OP1-OP9)</th><th>Status Usinagem</th>`;
+                colunasHTML=`${thOrdenavel('PV','pv')}${thOrdenavel('Item','item',true)}${thOrdenavel('Cliente','cliente')}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtde.','qtd',true)}${thOrdenavel('Bit','bit',true)}${thOrdenavel('Pos.','posCamisa',true)}${thOrdenavel('Terno','terno',true)}${thOrdenavel('Prazo Entrega','pzEntregaObj')}${thOrdenavel('Des.','des',true)}${thOrdenavel('Nº Eixo','nrEixo',true)}${thOrdenavel('Etapas (OP1-OP9)','recursoCamisa')}${thOrdenavel('Status Usinagem','statusUsinagem')}`;
                 colunasFiltroHTML=`
                     <td><select id="filtro-col-pv" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-item" class="table-filter-select"></select></td>
@@ -1492,18 +1497,18 @@
                 let adicionaisCol='', adicionaisFiltro='';
                 if (tipoProduto==="BAGACEIRAS") {
                     colspanRestante=11;
-                    adicionaisCol=`<th style="text-align:center">DES.</th><th style="text-align:center">PLAINAR</th><th style="text-align:center">FACEAR</th><th style="text-align:center">SERRAR</th><th style="text-align:center">SOLDA DURA</th><th style="text-align:center">ENCAIXE</th><th style="text-align:center">FURAÇÃO</th><th style="text-align:center">ACABAM.</th><th style="text-align:center">LIBERAÇÃO</th><th>STATUS USINAGEM</th>`;
+                    adicionaisCol=`${thOrdenavel('DES.','des',true)}${thOrdenavel('PLAINAR','plainar',true)}${thOrdenavel('FACEAR','facear',true)}${thOrdenavel('SERRAR','serrar',true)}${thOrdenavel('SOLDA DURA','soldadura',true)}${thOrdenavel('ENCAIXE','encaixe',true)}${thOrdenavel('FURAÇÃO','furacao',true)}${thOrdenavel('ACABAM.','acabam',true)}${thOrdenavel('LIBERAÇÃO','liberacao',true)}${thOrdenavel('STATUS USINAGEM','statusUsinagem')}`;
                     adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-plainar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-facear" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-serrar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-furacao" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-acabam" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-liberacao" class="table-filter-select"></select></td><td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
                 } else if (tipoProduto==="PENTES") {
                     colspanRestante=3;
-                    adicionaisCol=`<th style="text-align:center">DES. ENG.</th><th>STATUS USINAGEM</th>`;
+                    adicionaisCol=`${thOrdenavel('DES. ENG.','des',true)}${thOrdenavel('STATUS USINAGEM','statusUsinagem')}`;
                     adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
                 } else if (tipoProduto==="RODETES NOVOS") {
                     colspanRestante=9;
-                    adicionaisCol=`<th style="text-align:center">DES.</th><th style="text-align:center">DESB.</th><th style="text-align:center">T.T.</th><th style="text-align:center">US. FINAL</th><th style="text-align:center">FUNDO D.</th><th style="text-align:center">ACABAM</th><th style="text-align:center">LIBERAÇÃO</th><th>STATUS USINAGEM</th>`;
+                    adicionaisCol=`${thOrdenavel('DES.','des',true)}${thOrdenavel('DESB.','plainar',true)}${thOrdenavel('T.T.','facear',true)}${thOrdenavel('US. FINAL','serrar',true)}${thOrdenavel('FUNDO D.','soldadura',true)}${thOrdenavel('ACABAM','encaixe',true)}${thOrdenavel('LIBERAÇÃO','liberacao',true)}${thOrdenavel('STATUS USINAGEM','statusUsinagem')}`;
                     adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-plainar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-facear" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-serrar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-liberacao" class="table-filter-select"></select></td><td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
                 }
-                colunasHTML=`<th>PV / OS</th><th>Cliente</th><th>Peça</th><th>Seq.</th><th>Descrição</th><th style="text-align:center">Qtde.</th><th>Prazo Fundido</th><th>Prazo Entrega</th>${adicionaisCol}`;
+                colunasHTML=`${thOrdenavel('PV / OS','pv')}${thOrdenavel('Cliente','cliente')}${thOrdenavel('Peça','peca')}${thOrdenavel('Seq.','seq')}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtde.','qtd',true)}${thOrdenavel('Prazo Fundido','pzFundidoObj')}${thOrdenavel('Prazo Entrega','pzEntregaObj')}${adicionaisCol}`;
                 colunasFiltroHTML=`<td><select id="filtro-col-pv" class="table-filter-select"></select></td><td><select id="filtro-col-cliente" class="table-filter-select"></select></td><td><select id="filtro-col-peca" class="table-filter-select"></select></td><td><select id="filtro-col-seq" class="table-filter-select"></select></td><td><select id="filtro-col-desc" class="table-filter-select"></select></td><td><select id="filtro-col-qtd" class="table-filter-select"></select></td><td><input type="text" id="filtro-col-pzfundido" class="table-filter-input" placeholder="ex: 07/2026"></td><td><input type="text" id="filtro-col-pzentrega" class="table-filter-input" placeholder="ex: 07/2026"></td>${adicionaisFiltro}`;
             }
 
@@ -1524,7 +1529,7 @@
                     <div class="table-wrapper" id="table-wrapper-painel">
                         <table class="data-table">
                             <thead>
-                                <tr>${colunasHTML}<th style="text-align:center">Obs.</th></tr>
+                                <tr>${colunasHTML}${thOrdenavel('Obs.','observacao',true)}</tr>
                                 <tr class="filter-row">${colunasFiltroHTML}<td class="centralized-status"><input type="text" id="filtro-col-obs" class="table-filter-input" placeholder="Buscar..."></td></tr>
                             </thead>
                             <tbody id="tbody-dados-painel"></tbody>
@@ -1680,6 +1685,21 @@
             // Lista considerando também o card ativo (usada para a tabela)
             const linhas = linhasFiltrosColuna.filter(item => item.filtros[filtroCardAtivo]);
 
+            // Ordenação por coluna (clique no cabeçalho da tabela)
+            if (painelOrdenacao.campo) {
+                const campo = painelOrdenacao.campo, dir = painelOrdenacao.dir;
+                linhas.sort((a, b) => {
+                    const va = a.valoresFormatados[campo], vb = b.valoresFormatados[campo];
+                    const vaziaA = (va===undefined||va===null||va===''), vaziaB = (vb===undefined||vb===null||vb==='');
+                    if (vaziaA && vaziaB) return 0;
+                    if (vaziaA) return 1;
+                    if (vaziaB) return -1;
+                    if (va instanceof Date && vb instanceof Date) return (va - vb) * dir;
+                    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+                    return String(va).localeCompare(String(vb), 'pt-BR', { numeric: true, sensitivity: 'base' }) * dir;
+                });
+            }
+
             let soma=0;
             linhas.forEach(item => soma += item.valoresFormatados.qtd);
             document.getElementById('celula-soma-total').innerText = soma;
@@ -1793,6 +1813,25 @@
             });
         }
 
+        // Ordenação por coluna da tabela principal (Bagaceiras, Pentes, Rodetes Novos,
+        // Periféricos, Camisa, Eixos e Carteira Geral) — clique no cabeçalho da coluna.
+        function painelOrdenar(campo, thEl) {
+            if (painelOrdenacao.campo === campo) {
+                painelOrdenacao.dir *= -1;
+            } else {
+                painelOrdenacao = { campo, dir: 1 };
+            }
+            document.querySelectorAll('#table-wrapper-painel .th-sort').forEach(th => {
+                th.classList.remove('sort-active');
+                const seta = th.querySelector('.sort-arrow');
+                if (seta) seta.textContent = '';
+            });
+            thEl.classList.add('sort-active');
+            const seta = thEl.querySelector('.sort-arrow');
+            if (seta) seta.textContent = painelOrdenacao.dir === 1 ? '▲' : '▼';
+            executarFiltrosCombinados();
+        }
+
         function abrirModalObservacao(texto) {
             document.getElementById('modal-conteudo-texto').innerText = texto;
             document.getElementById('modal-observacao').classList.add('active');
@@ -1858,6 +1897,7 @@
         let diversosListaOriginal = [];
         let diversosFiltroAba = 'total'; // total | atrasos | liberadas
         let diversosOrdenacao = { campo: null, dir: 1 }; // dir: 1 asc, -1 desc
+        let painelOrdenacao = { campo: null, dir: 1 };
 
         // --- MANGANÊS ---
         let manganesListaOriginal = [];
