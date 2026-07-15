@@ -839,13 +839,13 @@
 
     <!-- MODAL DE ANDAMENTO DO EIXO -->
     <div id="modal-eixo" class="modal-overlay" onclick="fecharModalEixo(event)">
-        <div class="modal-box" style="max-width:340px">
-            <div class="modal-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M4 6l16 12M20 6L4 18"/></svg>
-                <span id="modal-eixo-titulo">Andamento do Eixo</span>
+        <div class="modal-box" style="max-width:220px;width:auto">
+            <div class="modal-header" style="padding:0.7rem 0.9rem;font-size:0.78rem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M12 2v20M4 6l16 12M20 6L4 18"/></svg>
+                <span id="modal-eixo-titulo">Eixo</span>
             </div>
-            <div id="modal-eixo-conteudo" class="modal-body">Carregando...</div>
-            <div class="modal-footer">
+            <div id="modal-eixo-conteudo" class="modal-body" style="padding:0.8rem 0.9rem;text-align:center">Carregando...</div>
+            <div class="modal-footer" style="padding:0.5rem 0.9rem">
                 <button class="btn-modal-close" onclick="document.getElementById('modal-eixo').classList.remove('active')">Fechar</button>
             </div>
         </div>
@@ -1264,7 +1264,7 @@
             const modal = document.getElementById('modal-eixo');
             const tituloEl = document.getElementById('modal-eixo-titulo');
             const conteudoEl = document.getElementById('modal-eixo-conteudo');
-            tituloEl.textContent = `Andamento do Eixo Nº ${nrEixo}`;
+            tituloEl.textContent = `Eixo ${nrEixo}`;
 
             const info = eixosPorNumero[normalizarTextoParaFiltro(nrEixo)];
             if (!info) {
@@ -1278,14 +1278,8 @@
                     : `<span style="color:var(--text-3)">—</span>`;
 
                 conteudoEl.innerHTML = `
-                    <div class="eixo-modal-secao">
-                        <div class="eixo-modal-rotulo">Etapas (OP1 – OP9)</div>
-                        <div style="font-size:0.8rem">${etapasHTML}</div>
-                    </div>
-                    <div class="eixo-modal-secao">
-                        <div class="eixo-modal-rotulo">Status Usinagem</div>
-                        ${statusHTML}
-                    </div>
+                    <div style="font-size:0.8rem;margin-bottom:0.5rem">${etapasHTML}</div>
+                    <div>${statusHTML}</div>
                 `;
             }
             modal.classList.add('active');
