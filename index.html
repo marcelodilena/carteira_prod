@@ -442,6 +442,27 @@
         }
         .btn-obs-trigger:hover { transform: scale(1.15); border-color: var(--accent); }
 
+        .btn-eixo-link {
+            background: var(--accent-dim);
+            border: 1px solid rgba(233,115,50,0.3);
+            color: var(--accent);
+            border-radius: 4px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 2px 9px;
+            transition: all 0.15s;
+        }
+        .btn-eixo-link:hover { background: var(--accent-glow); transform: translateY(-1px); }
+
+        .eixo-modal-secao { margin-bottom: 1rem; }
+        .eixo-modal-secao:last-child { margin-bottom: 0; }
+        .eixo-modal-rotulo {
+            font-size: 0.66rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--text-3); margin-bottom: 6px;
+        }
+        .eixo-modal-subtitulo { font-size: 0.76rem; color: var(--text-3); margin-top: 2px; }
+
         .bola-vermelha-alerta { margin-right: 5px; font-size: 0.75rem; vertical-align: middle; animation: pulse-alerta 2s infinite; }
         .bola-amarela-alerta  { margin-right: 5px; font-size: 0.75rem; vertical-align: middle; }
         @keyframes pulse-alerta { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.5; } }
@@ -816,6 +837,20 @@
         </div>
     </div>
 
+    <!-- MODAL DE ANDAMENTO DO EIXO -->
+    <div id="modal-eixo" class="modal-overlay" onclick="fecharModalEixo(event)">
+        <div class="modal-box" style="max-width:480px">
+            <div class="modal-header">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M4 6l16 12M20 6L4 18"/></svg>
+                <span id="modal-eixo-titulo">Andamento do Eixo</span>
+            </div>
+            <div id="modal-eixo-conteudo" class="modal-body">Carregando...</div>
+            <div class="modal-footer">
+                <button class="btn-modal-close" onclick="document.getElementById('modal-eixo').classList.remove('active')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- DRAWER MOBILE -->
     <div id="mobile-drawer" class="mobile-drawer" onclick="fecharDrawerSeFora(event)">
         <div class="drawer-backdrop"></div>
@@ -979,6 +1014,9 @@
         // Cada item é um array de {texto, concluida} — concluida = célula pintada de verde no Excel.
         let camisaEtapasOPPorIndice = [];
         let eixosEtapasOPPorIndice = [];
+        // Índice da aba EIXOS por "Nº Eixo" (texto normalizado) -> {statusUsinagem, observacao, etapas...}
+        // Usado pelo modal "Andamento do Eixo", aberto ao clicar no Nº Eixo dentro da tabela CAMISA.
+        let eixosPorNumero = {};
 
         // --- RELÓGIO ---
         function atualizarRelogio() {
@@ -1033,6 +1071,7 @@
                         eixosEtapasOPPorIndice = extrairEtapasColunasOP(workbook.Sheets[name]);
                     }
                 });
+                construirIndiceEixos();
 
                 document.getElementById('sub-navigation-strip').classList.remove('hidden-initially');
                 statusDot.className = 'status-dot online';
@@ -1189,6 +1228,80 @@
             const concluidasN = etapas.filter(e => e.concluida).length;
             return `<span class="recurso-camisa">${partes.join(' / ')}<span class="recurso-camisa-contador">${concluidasN}/${etapas.length} etapas concluídas</span></span>`;
         }
+        // Monta um índice da aba EIXOS por "Nº Eixo" (chave normalizada), para que a tabela
+        // CAMISA consiga, ao clicar no Nº Eixo, mostrar o andamento (etapas OP1-OP9, status
+        // de usinagem e observação) do eixo correspondente, sem precisar trocar de aba.
+        function construirIndiceEixos() {
+            eixosPorNumero = {};
+            const linhasEixos = abasPlanilha[normalizarTextoParaFiltro('EIXOS')] || [];
+            linhasEixos.forEach((linha, idx) => {
+                const nr = String(buscarValor(linha,'Nº Eixo2')||buscarValor(linha,'Nº Eixo')||'').trim();
+                if (!nr) return;
+                const chave = normalizarTextoParaFiltro(nr);
+                eixosPorNumero[chave] = {
+                    nrEixo: nr,
+                    pv: String(buscarValor(linha,'PV')||'').trim(),
+                    cliente: String(buscarValor(linha,'Cliente')||'').trim(),
+                    descricao: String(buscarValor(linha,'Descrição')||'').trim(),
+                    statusUsinagem: String(buscarValor(linha,'Status Usinagem')||buscarValor(linha,'Status Us.')||'').trim(),
+                    observacao: String(buscarValor(linha,'Observação')||buscarValor(linha,'Obs')||'').trim(),
+                    etapas: eixosEtapasOPPorIndice[idx] || []
+                };
+            });
+        }
+
+        // Escapa texto simples antes de inserir como HTML (evita quebrar o layout do modal
+        // caso a observação contenha caracteres como < > & etc.).
+        function escaparHTML(txt) {
+            const div = document.createElement('div');
+            div.textContent = String(txt||'');
+            return div.innerHTML;
+        }
+
+        // Abre o modal "Andamento do Eixo" a partir do Nº Eixo clicado na tabela CAMISA,
+        // buscando os dados correspondentes na aba EIXOS (etapas OP1-OP9, status e observação).
+        function abrirModalEixo(nrEixo) {
+            const modal = document.getElementById('modal-eixo');
+            const tituloEl = document.getElementById('modal-eixo-titulo');
+            const conteudoEl = document.getElementById('modal-eixo-conteudo');
+            tituloEl.textContent = `Andamento do Eixo Nº ${nrEixo}`;
+
+            const info = eixosPorNumero[normalizarTextoParaFiltro(nrEixo)];
+            if (!info) {
+                conteudoEl.innerHTML = `<div style="text-align:center;color:var(--text-3);padding:0.5rem 0">
+                    Nenhum registro encontrado na aba <b>Eixos</b> para o Nº <b>${escaparHTML(nrEixo)}</b>.
+                </div>`;
+            } else {
+                const etapasHTML = renderEtapasCamisa(info.etapas);
+                const statusHTML = info.statusUsinagem
+                    ? `<span class="badge-status-usinagem">${escaparHTML(info.statusUsinagem)}</span>`
+                    : `<span style="color:var(--text-3)">—</span>`;
+                const temObs = info.observacao && info.observacao!=='undefined' && info.observacao!=='0' && info.observacao!=='nan';
+                const obsHTML = temObs ? escaparHTML(info.observacao) : 'Nenhuma nota inserida.';
+                const subtitulo = [info.pv?`PV ${info.pv}`:'', info.cliente, info.descricao].filter(Boolean).join(' · ');
+
+                conteudoEl.innerHTML = `
+                    ${subtitulo ? `<div class="eixo-modal-subtitulo" style="margin-bottom:0.9rem">${escaparHTML(subtitulo)}</div>` : ''}
+                    <div class="eixo-modal-secao">
+                        <div class="eixo-modal-rotulo">Etapas (OP1 – OP9)</div>
+                        <div style="font-size:0.8rem">${etapasHTML}</div>
+                    </div>
+                    <div class="eixo-modal-secao">
+                        <div class="eixo-modal-rotulo">Status Usinagem</div>
+                        ${statusHTML}
+                    </div>
+                    <div class="eixo-modal-secao">
+                        <div class="eixo-modal-rotulo">Observação</div>
+                        <div style="color:var(--text-2)">${obsHTML}</div>
+                    </div>
+                `;
+            }
+            modal.classList.add('active');
+        }
+        function fecharModalEixo(evento) {
+            if (evento.target.id==='modal-eixo') document.getElementById('modal-eixo').classList.remove('active');
+        }
+
         // Gera um <th> clicável para ordenação da tabela principal (ver painelOrdenar).
         function thOrdenavel(label, campo, centralizado) {
             return `<th class="th-sort"${centralizado?' style="text-align:center"':''} data-sort="${campo}" onclick="painelOrdenar('${campo}', this)">${label}<span class="sort-arrow"></span></th>`;
@@ -1750,7 +1863,7 @@
                         <td class="centralized-status">${formatarStatusComIcone(vf.des)}</td>
                         <td style="font-size:0.75rem">${renderEtapasCamisa(vf.etapasCamisa)}</td>
                         <td>${statusBadge(vf.statusCamisa||vf.statusUsinagem)}</td>
-                        <td style="text-align:center;color:var(--text-2)">${vf.nrEixo||'—'}</td>
+                        <td style="text-align:center;color:var(--text-2)">${vf.nrEixo ? `<button class="btn-eixo-link" onclick="abrirModalEixo('${vf.nrEixo.replace(/'/g,"\\'")}')" title="Ver andamento do eixo">${vf.nrEixo}</button>` : '—'}</td>
                         <td>${alertaHTML}<span style="color:${prazoCor}">${vf.pzEntregaCamisaStr||'—'}</span></td>
                         <td class="centralized-status">${obsHTML}</td>`;
                 } else if (nomeAbaAtiva==="CARTEIRA GERAL") {
