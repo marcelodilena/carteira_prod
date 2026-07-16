@@ -2110,6 +2110,7 @@
         // com filtros por Cliente, Categoria e Status, e exportação para impressão em A4.
         let relatorioDadosCompletos = [];
         let relatorioListaFiltrada = [];
+        let relatorioOrdenacao = { campo: null, dir: 1 };
 
         const RELATORIO_CATEGORIAS = [
             { tipo: 'BAGACEIRAS',        label: 'Bagaceiras' },
@@ -2202,6 +2203,7 @@
             }
 
             relatorioMontarDados();
+            relatorioOrdenacao = { campo: null, dir: 1 };
 
             areaDestino.innerHTML = `
                 <div class="section-header">
@@ -2264,14 +2266,14 @@
                         <table class="data-table" id="tbl-relatorio">
                             <thead>
                                 <tr>
-                                    <th>PV</th>
-                                    <th>Cliente</th>
-                                    <th>Descrição</th>
-                                    <th style="text-align:center">Qtde.</th>
-                                    <th style="text-align:center">Nº Eixo</th>
-                                    <th>Prazo Fundido</th>
-                                    <th>Prazo Entrega</th>
-                                    <th>Status</th>
+                                    <th class="th-sort" data-sort="pv" onclick="relatorioOrdenar('pv', this)">PV<span class="sort-arrow"></span></th>
+                                    <th class="th-sort" data-sort="cliente" onclick="relatorioOrdenar('cliente', this)">Cliente<span class="sort-arrow"></span></th>
+                                    <th class="th-sort" data-sort="descricao" onclick="relatorioOrdenar('descricao', this)">Descrição<span class="sort-arrow"></span></th>
+                                    <th class="th-sort" style="text-align:center" data-sort="qtd" onclick="relatorioOrdenar('qtd', this)">Qtde.<span class="sort-arrow"></span></th>
+                                    <th class="th-sort" style="text-align:center" data-sort="nrEixo" onclick="relatorioOrdenar('nrEixo', this)">Nº Eixo<span class="sort-arrow"></span></th>
+                                    <th class="th-sort" data-sort="pzFundidoObj" onclick="relatorioOrdenar('pzFundidoObj', this)">Prazo Fundido<span class="sort-arrow"></span></th>
+                                    <th class="th-sort" data-sort="pzEntregaObj" onclick="relatorioOrdenar('pzEntregaObj', this)">Prazo Entrega<span class="sort-arrow"></span></th>
+                                    <th class="th-sort" data-sort="statusTxt" onclick="relatorioOrdenar('statusTxt', this)">Status<span class="sort-arrow"></span></th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-relatorio"></tbody>
@@ -2306,11 +2308,25 @@
                 return true;
             });
 
-            relatorioListaFiltrada.sort((a,b) => {
-                const cc = a.cliente.toLowerCase().localeCompare(b.cliente.toLowerCase());
-                if (cc !== 0) return cc;
-                return a.descricao.toLowerCase().localeCompare(b.descricao.toLowerCase());
-            });
+            if (relatorioOrdenacao.campo) {
+                const campo = relatorioOrdenacao.campo, dir = relatorioOrdenacao.dir;
+                relatorioListaFiltrada.sort((a, b) => {
+                    const va = a[campo], vb = b[campo];
+                    const vaziaA = (va===undefined||va===null||va===''), vaziaB = (vb===undefined||vb===null||vb==='');
+                    if (vaziaA && vaziaB) return 0;
+                    if (vaziaA) return 1;
+                    if (vaziaB) return -1;
+                    if (va instanceof Date && vb instanceof Date) return (va - vb) * dir;
+                    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+                    return String(va).localeCompare(String(vb), 'pt-BR', { numeric: true, sensitivity: 'base' }) * dir;
+                });
+            } else {
+                relatorioListaFiltrada.sort((a,b) => {
+                    const cc = a.cliente.toLowerCase().localeCompare(b.cliente.toLowerCase());
+                    if (cc !== 0) return cc;
+                    return a.descricao.toLowerCase().localeCompare(b.descricao.toLowerCase());
+                });
+            }
 
             const tbody = document.getElementById('tbody-relatorio');
             tbody.innerHTML = '';
@@ -2336,11 +2352,34 @@
             document.getElementById('relatorio-contador').textContent = `${relatorioListaFiltrada.length} itens`;
         }
 
+        function relatorioOrdenar(campo, thEl) {
+            if (relatorioOrdenacao.campo === campo) {
+                relatorioOrdenacao.dir *= -1;
+            } else {
+                relatorioOrdenacao = { campo, dir: 1 };
+            }
+            document.querySelectorAll('#tbl-relatorio .th-sort').forEach(th => {
+                th.classList.remove('sort-active');
+                const seta = th.querySelector('.sort-arrow');
+                if (seta) seta.textContent = '';
+            });
+            thEl.classList.add('sort-active');
+            const seta = thEl.querySelector('.sort-arrow');
+            if (seta) seta.textContent = relatorioOrdenacao.dir === 1 ? '▲' : '▼';
+            relatorioFiltrar();
+        }
+
         function relatorioLimparFiltros() {
             const campos = ['relatorio-filtro-cliente','relatorio-filtro-categoria','relatorio-filtro-status'];
             campos.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
             const busca = document.getElementById('relatorio-filtro-busca');
             if (busca) busca.value = '';
+            relatorioOrdenacao = { campo: null, dir: 1 };
+            document.querySelectorAll('#tbl-relatorio .th-sort').forEach(th => {
+                th.classList.remove('sort-active');
+                const seta = th.querySelector('.sort-arrow');
+                if (seta) seta.textContent = '';
+            });
             relatorioFiltrar();
         }
 
