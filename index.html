@@ -813,6 +813,23 @@
         .row-atrasada   { background: rgba(239,68,68,0.06) !important; }
         .row-atrasada:hover { background: rgba(239,68,68,0.10) !important; }
 
+        /* ===================== RELATÓRIO: impressão / geração de PDF (A4) ===================== */
+        #relatorio-print-area { display: none; }
+        .relatorio-print-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; padding-bottom:8px; border-bottom:2px solid #333; }
+        .relatorio-print-header h1 { font-size:15pt; margin:0; }
+        .relatorio-print-header .relatorio-print-meta { font-size:8.5pt; color:#444; text-align:right; }
+        .relatorio-print-filtros { font-size:8.5pt; color:#333; margin-bottom:8px; }
+        .relatorio-print-table { width:100%; border-collapse:collapse; font-size:8.5pt; }
+        .relatorio-print-table th, .relatorio-print-table td { border:1px solid #999; padding:3px 5px; text-align:left; }
+        .relatorio-print-table th { background:#eee; }
+        .relatorio-print-table td.num, .relatorio-print-table th.num { text-align:center; }
+        .relatorio-print-rodape { margin-top:8px; font-size:7.5pt; color:#666; text-align:right; }
+        @media print {
+            @page { size: A4; margin: 12mm; }
+            body.modo-impressao-relatorio > *:not(#relatorio-print-area) { display: none !important; }
+            body.modo-impressao-relatorio #relatorio-print-area { display: block !important; }
+            body.modo-impressao-relatorio { background: #fff !important; }
+        }
     </style>
 </head>
 <body>
@@ -879,6 +896,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
                 Vendas Industriais
             </div>
+            <div class="drawer-nav-item" id="drawer-tab-relatorio" onclick="drawerSwitchMain('relatorio','Relatório',this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+                Relatório
+            </div>
 
             <!-- Sub-abas de Açúcar -->
             <div id="drawer-sub-acucar">
@@ -901,6 +922,7 @@
                 <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('VI DIVERSOS')">Carteira Diversos</div>
                 <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('MANGANES')">Manganês</div>
             </div>
+            <div id="drawer-sub-relatorio" style="display:none"></div>
 
             <div class="drawer-footer">Carteira Produção · Fundição Moreno © 2025</div>
         </div>
@@ -932,6 +954,10 @@
             <div class="main-tab" onclick="switchMainTab('vendas', this, 'Vendas Industriais')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
                 Vendas Industriais
+            </div>
+            <div class="main-tab" onclick="switchMainTab('relatorio', this, 'Relatório')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+                Relatório
             </div>
         </div>
 
@@ -974,6 +1000,7 @@
             <li><a class="sub-tab menu-item" data-tipo="VI DIVERSOS">Carteira Diversos</a></li>
             <li><a class="sub-tab menu-item" data-tipo="MANGANES">Manganês</a></li>
         </ul>
+        <ul id="sub-relatorio" class="sub-tabs-group"></ul>
     </div>
 
     <!-- CONTEÚDO -->
@@ -987,6 +1014,9 @@
             <div id="custom-dashboard-area" style="display:flex; flex-direction:column; height:100%; overflow:hidden;"></div>
         </main>
     </div>
+
+    <!-- Área usada apenas na impressão/geração de PDF do Relatório (oculta na tela) -->
+    <div id="relatorio-print-area"></div>
 
     <!-- STATUS BAR INFERIOR -->
     <div class="statusbar">
@@ -1108,6 +1138,31 @@
         window.addEventListener('DOMContentLoaded', carregarPlanilhaDoServidor);
 
         // --- TABS ---
+        // Alterna o módulo principal a partir do drawer mobile, espelhando a mesma lógica
+        // usada pelas abas do cabeçalho desktop (switchMainTab).
+        function drawerSwitchMain(tabId, nomeDepartamento, element) {
+            const ordemAbas = ['acucar','engenharia','vendas','relatorio'];
+            const idx = ordemAbas.indexOf(tabId);
+            const desktopTabEls = document.querySelectorAll('.main-tab');
+            const desktopEl = idx >= 0 ? desktopTabEls[idx] : null;
+
+            document.querySelectorAll('.drawer-nav-item').forEach(el => {
+                if (!el.classList.contains('sub')) el.classList.remove('active');
+            });
+            if (element) element.classList.add('active');
+
+            document.querySelectorAll('[id^="drawer-sub-"]').forEach(el => el.style.display = 'none');
+            const subDrawer = document.getElementById('drawer-sub-' + tabId);
+            if (subDrawer) subDrawer.style.display = '';
+
+            if (desktopEl) {
+                switchMainTab(tabId, desktopEl, nomeDepartamento);
+            }
+
+            const drawer = document.getElementById('mobile-drawer');
+            if (drawer) drawer.classList.remove('open');
+        }
+
         function switchMainTab(tabId, element, nomeDepartamento) {
             document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
             element.classList.add('active');
@@ -1116,6 +1171,13 @@
             document.querySelectorAll('.sub-tab').forEach(s => s.classList.remove('active'));
             document.getElementById('custom-dashboard-area').innerHTML = '';
             document.getElementById('statusbar-modulo').textContent = nomeDepartamento;
+
+            // Relatório: tela própria, sem submenu — abre direto
+            if (tabId === 'relatorio') {
+                document.getElementById('status-screen').style.display = 'none';
+                construirTelaRelatorio();
+                return;
+            }
 
             // Açúcar e Álcool abre direto na Carteira Geral / Vendas Industriais abre direto na Carteira Diversos
             const autoAbrirPorAba = { 'acucar': 'CARTEIRA GERAL', 'vendas': 'VI DIVERSOS' };
@@ -2041,6 +2103,289 @@
         let manganesListaOriginal = [];
         let manganesFiltroAba = 'total'; // total | atrasos | liberadas
         let manganesOrdenacao = { campo: null, dir: 1 };
+
+        // ===================== RELATÓRIO (Açúcar e Álcool) =====================
+        // Reúne os itens de todas as abas de produto (Bagaceiras, Pentes, Rodetes Novos,
+        // Camisa, Eixo, Periféricos e Reforma Diversas) num único relatório consolidado,
+        // com filtros por Cliente, Categoria e Status, e exportação para impressão em A4.
+        let relatorioDadosCompletos = [];
+        let relatorioListaFiltrada = [];
+
+        const RELATORIO_CATEGORIAS = [
+            { tipo: 'BAGACEIRAS',        label: 'Bagaceiras' },
+            { tipo: 'PENTES',            label: 'Pentes' },
+            { tipo: 'RODETES NOVOS',     label: 'Rodetes Novos' },
+            { tipo: 'CAMISAS',           label: 'Camisa' },
+            { tipo: 'EIXOS',             label: 'Eixo' },
+            { tipo: 'PERIFÉRICOS',       label: 'Periféricos' },
+            { tipo: 'REFORMA DIVERSAS',  label: 'Reforma Diversas' },
+        ];
+
+        function relatorioMontarDados() {
+            const hoje = new Date(); hoje.setHours(0,0,0,0);
+            const excluidosAtraso = ['AG COLETAR','AG. COLETAR','AG COLETA','AG. COLETA','EXPEDIDO','EXPEDIDOS','CONCLUIDO','CONCLUÍDO'];
+            relatorioDadosCompletos = [];
+
+            RELATORIO_CATEGORIAS.forEach(cat => {
+                const linhas = abasPlanilha[normalizarTextoParaFiltro(cat.tipo)] || [];
+                linhas.forEach(linha => {
+                    const pv        = String(buscarValor(linha,'PV')||buscarValor(linha,'O.S.')||buscarValor(linha,'OS')).trim();
+                    const cliente   = String(buscarValor(linha,'Cliente')).trim();
+                    const descricao = String(buscarValor(linha,'Descrição')||buscarValor(linha,'Descricao')).trim();
+                    if (pv.toUpperCase()==='PV'||pv.toUpperCase()==='OS'||pv.toUpperCase()==='O.S.') return;
+                    if (!pv && !cliente && !descricao) return;
+
+                    const qtd = parseInt(buscarValor(linha,'Qtde')||buscarValor(linha,'Qtd')||buscarValor(linha,'Qtde.')||1)||0;
+                    const pzFundidoCru = buscarValor(linha,'Prazo Fund')||buscarValor(linha,'Prazo Fundido')||buscarValor(linha,'Data Prev. Fundido');
+
+                    let statusCru, pzEntregaCru;
+                    if (cat.tipo === 'CAMISAS') {
+                        statusCru    = buscarValor(linha,'Status\nCamisa')||buscarValor(linha,'Status Camisa')||buscarValor(linha,'Status Usinagem');
+                        pzEntregaCru = buscarValor(linha,'Prazo\nEntrega\nCamisa')||buscarValor(linha,'Prazo Entrega Camisa')||buscarValor(linha,'Prazo Entrega');
+                    } else {
+                        statusCru    = buscarValor(linha,'Status Usinagem')||buscarValor(linha,'Status Us.')||buscarValor(linha,'Status');
+                        pzEntregaCru = buscarValor(linha,'Prazo Entrega')||buscarValor(linha,'Data Prev. Entrega')||buscarValor(linha,'Prazo\nEntrega\nEixo')||buscarValor(linha,'Prazo Entrega Eixo');
+                    }
+                    const statusTxt  = String(statusCru||'').trim();
+                    const statusNorm = normalizarTextoParaFiltro(statusTxt);
+
+                    const pzFundidoInfo = formatarDataExcel(pzFundidoCru);
+                    const pzEntregaInfo = formatarDataExcel(pzEntregaCru);
+
+                    const isExpedido  = ['EXPEDIDO','EXPEDIDOS'].includes(statusNorm);
+                    const isAgFundido = ['AG FUNDIDO','AG. FUNDIDO','AG FUSAO','AG. FUSÃO','AG FUSÃO'].includes(statusNorm);
+                    let isLiberado;
+                    if (cat.tipo === 'CAMISAS') {
+                        isLiberado = ['CONCLUIDO','CONCLUÍDO','AG EIXO','AG. EIXO'].includes(statusNorm);
+                    } else {
+                        isLiberado = !isAgFundido;
+                    }
+
+                    let isAtrasado = false;
+                    if (pzEntregaInfo.dataObjeto instanceof Date && !excluidosAtraso.includes(statusNorm)) {
+                        const dpe = new Date(pzEntregaInfo.dataObjeto); dpe.setHours(0,0,0,0);
+                        if (dpe < hoje) isAtrasado = true;
+                    }
+
+                    relatorioDadosCompletos.push({
+                        pv, cliente, descricao, qtd,
+                        pzFundidoStr: pzFundidoInfo.stringLegivel, pzFundidoObj: pzFundidoInfo.dataObjeto,
+                        pzEntregaStr: pzEntregaInfo.stringLegivel, pzEntregaObj: pzEntregaInfo.dataObjeto,
+                        statusTxt, statusNorm,
+                        categoria: cat.tipo, categoriaLabel: cat.label,
+                        isAtrasado, isLiberado, isExpedido, isAgFundido
+                    });
+                });
+            });
+        }
+
+        function relatorioPopularClientes() {
+            const select = document.getElementById('relatorio-filtro-cliente');
+            if (!select) return;
+            const clientes = [...new Set(relatorioDadosCompletos.map(r => r.cliente).filter(Boolean))]
+                .sort((a,b) => a.localeCompare(b));
+            select.innerHTML = `<option value="">Todos</option>` +
+                clientes.map(c => `<option value="${escaparHTML(c)}">${escaparHTML(c)}</option>`).join('');
+        }
+
+        function construirTelaRelatorio() {
+            nomeAbaAtiva = 'RELATORIO';
+            document.getElementById('statusbar-modulo').textContent = 'Relatório';
+            const areaDestino = document.getElementById('custom-dashboard-area');
+            areaDestino.innerHTML = '';
+
+            if (Object.keys(abasPlanilha).length === 0) {
+                areaDestino.innerHTML = `<div style="padding:2rem;text-align:center;color:var(--text-3)"><h2>Aguardando o carregamento da planilha...</h2></div>`;
+                return;
+            }
+
+            relatorioMontarDados();
+
+            areaDestino.innerHTML = `
+                <div class="section-header">
+                    <div class="section-header-line"></div>
+                    <h3>Relatório · Açúcar e Álcool</h3>
+                </div>
+
+                <div class="table-card" style="margin-bottom:0.75rem;flex:none;">
+                    <div style="display:flex;flex-wrap:wrap;gap:0.75rem;padding:1rem;align-items:flex-end;">
+                        <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:180px;">
+                            <label style="font-size:0.72rem;color:var(--text-3);font-weight:600;text-transform:uppercase;">Cliente</label>
+                            <select id="relatorio-filtro-cliente" class="table-filter-select" style="width:100%;"></select>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:180px;">
+                            <label style="font-size:0.72rem;color:var(--text-3);font-weight:600;text-transform:uppercase;">Categoria</label>
+                            <select id="relatorio-filtro-categoria" class="table-filter-select" style="width:100%;">
+                                <option value="">Todos</option>
+                                ${RELATORIO_CATEGORIAS.map(c => `<option value="${c.tipo}">${c.label}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:180px;">
+                            <label style="font-size:0.72rem;color:var(--text-3);font-weight:600;text-transform:uppercase;">Status</label>
+                            <select id="relatorio-filtro-status" class="table-filter-select" style="width:100%;">
+                                <option value="">Todos</option>
+                                <option value="atraso">Em Atraso</option>
+                                <option value="liberado">Liberado</option>
+                                <option value="expedido">Expedido</option>
+                                <option value="ag-fundido">AG. Fundido</option>
+                            </select>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:220px;flex:1;">
+                            <label style="font-size:0.72rem;color:var(--text-3);font-weight:600;text-transform:uppercase;">Contém (PV, Cliente ou Descrição)</label>
+                            <input type="text" id="relatorio-filtro-busca" class="table-filter-input" style="width:100%;" placeholder="Digite para buscar...">
+                        </div>
+                        <div style="display:flex;gap:0.5rem;">
+                            <button class="btn-sync" style="background:var(--accent)" onclick="relatorioFiltrar()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                                <span class="btn-sync-label">Filtrar</span>
+                            </button>
+                            <button class="btn-sync" style="background:#334155" onclick="relatorioGerarPDF()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+                                <span class="btn-sync-label">Gerar PDF</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-title-area">
+                        <div id="relatorio-titulo-tabela" class="table-title-text">Todos os Registros</div>
+                        <div id="relatorio-contador" class="table-record-count">0 itens</div>
+                    </div>
+                    <div class="scroll-hint-mobile" id="scroll-hint-relatorio">↔ Arraste a tabela para o lado para ver mais colunas</div>
+                    <div class="table-wrapper" id="table-wrapper-relatorio">
+                        <table class="data-table" id="tbl-relatorio">
+                            <thead>
+                                <tr>
+                                    <th>PV</th>
+                                    <th>Cliente</th>
+                                    <th>Descrição</th>
+                                    <th style="text-align:center">Qtde.</th>
+                                    <th>Prazo Fundido</th>
+                                    <th>Prazo Entrega</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-relatorio"></tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            relatorioPopularClientes();
+            ativarAvisoScrollMobile('table-wrapper-relatorio', 'scroll-hint-relatorio');
+            relatorioFiltrar();
+        }
+
+        function relatorioFiltrar() {
+            const fCliente   = (document.getElementById('relatorio-filtro-cliente')?.value || '');
+            const fCategoria = (document.getElementById('relatorio-filtro-categoria')?.value || '');
+            const fStatus    = (document.getElementById('relatorio-filtro-status')?.value || '');
+            const fBusca     = normalizarTextoParaFiltro(document.getElementById('relatorio-filtro-busca')?.value || '');
+
+            relatorioListaFiltrada = relatorioDadosCompletos.filter(r => {
+                if (fCliente && r.cliente !== fCliente) return false;
+                if (fCategoria && r.categoria !== fCategoria) return false;
+                if (fStatus === 'atraso'     && !r.isAtrasado)  return false;
+                if (fStatus === 'liberado'   && !r.isLiberado)  return false;
+                if (fStatus === 'expedido'   && !r.isExpedido)  return false;
+                if (fStatus === 'ag-fundido' && !r.isAgFundido) return false;
+                if (fBusca) {
+                    const alvo = normalizarTextoParaFiltro(`${r.pv} ${r.cliente} ${r.descricao}`);
+                    if (!alvo.includes(fBusca)) return false;
+                }
+                return true;
+            });
+
+            relatorioListaFiltrada.sort((a,b) => {
+                const cc = a.cliente.toLowerCase().localeCompare(b.cliente.toLowerCase());
+                if (cc !== 0) return cc;
+                return a.descricao.toLowerCase().localeCompare(b.descricao.toLowerCase());
+            });
+
+            const tbody = document.getElementById('tbody-relatorio');
+            tbody.innerHTML = '';
+            if (relatorioListaFiltrada.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+            } else {
+                relatorioListaFiltrada.forEach(r => {
+                    const tr = document.createElement('tr');
+                    const corPrazo = r.isAtrasado ? '#ef4444' : 'var(--text-1)';
+                    tr.innerHTML = `
+                        <td><b style="color:var(--text-1)">${escaparHTML(r.pv)||'—'}</b></td>
+                        <td>${escaparHTML(r.cliente)||'—'}</td>
+                        <td style="color:var(--text-2)">${escaparHTML(r.descricao)||'—'}</td>
+                        <td style="text-align:center;font-weight:600;color:var(--accent)">${r.qtd}</td>
+                        <td style="color:var(--text-2)">${r.pzFundidoStr||'—'}</td>
+                        <td style="color:${corPrazo};font-weight:${r.isAtrasado?'600':'400'}">${r.pzEntregaStr||'—'}</td>
+                        <td><span class="badge-status-usinagem">${escaparHTML(r.statusTxt)||'—'}</span></td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            document.getElementById('relatorio-contador').textContent = `${relatorioListaFiltrada.length} itens`;
+        }
+
+        function relatorioGerarPDF() {
+            if (!relatorioListaFiltrada) relatorioListaFiltrada = [];
+            const fCliente   = document.getElementById('relatorio-filtro-cliente')?.value || 'Todos';
+            const fCategoriaSel = document.getElementById('relatorio-filtro-categoria');
+            const fCategoria  = fCategoriaSel && fCategoriaSel.value
+                ? (RELATORIO_CATEGORIAS.find(c => c.tipo === fCategoriaSel.value)?.label || fCategoriaSel.value)
+                : 'Todas';
+            const statusLabels = { atraso:'Em Atraso', liberado:'Liberado', expedido:'Expedido', 'ag-fundido':'AG. Fundido' };
+            const fStatusVal = document.getElementById('relatorio-filtro-status')?.value || '';
+            const fStatus = fStatusVal ? statusLabels[fStatusVal] : 'Todos';
+            const fBusca  = document.getElementById('relatorio-filtro-busca')?.value || '';
+
+            const agora = new Date();
+            const dataGeracao = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR');
+
+            const linhasHTML = relatorioListaFiltrada.map(r => `
+                <tr>
+                    <td>${escaparHTML(r.pv)||'—'}</td>
+                    <td>${escaparHTML(r.cliente)||'—'}</td>
+                    <td>${escaparHTML(r.descricao)||'—'}</td>
+                    <td class="num">${r.qtd}</td>
+                    <td>${r.pzFundidoStr||'—'}</td>
+                    <td>${r.pzEntregaStr||'—'}</td>
+                    <td>${escaparHTML(r.statusTxt)||'—'}</td>
+                </tr>`).join('');
+
+            const filtrosResumo = [
+                `Cliente: ${escaparHTML(fCliente || 'Todos')}`,
+                `Categoria: ${escaparHTML(fCategoria)}`,
+                `Status: ${escaparHTML(fStatus)}`,
+                fBusca ? `Busca: "${escaparHTML(fBusca)}"` : null
+            ].filter(Boolean).join('  ·  ');
+
+            const printArea = document.getElementById('relatorio-print-area');
+            printArea.innerHTML = `
+                <div class="relatorio-print-header">
+                    <h1>Fundição Moreno — Relatório · Açúcar e Álcool</h1>
+                    <div class="relatorio-print-meta">Gerado em ${dataGeracao}</div>
+                </div>
+                <div class="relatorio-print-filtros">${filtrosResumo}</div>
+                <table class="relatorio-print-table">
+                    <thead>
+                        <tr>
+                            <th>PV</th><th>Cliente</th><th>Descrição</th><th class="num">Qtde.</th>
+                            <th>Prazo Fundido</th><th>Prazo Entrega</th><th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>${linhasHTML || `<tr><td colspan="7" style="text-align:center">Nenhum registro encontrado.</td></tr>`}</tbody>
+                </table>
+                <div class="relatorio-print-rodape">${relatorioListaFiltrada.length} registro(s) · Carteira Produção · Fundição Moreno</div>
+            `;
+
+            document.body.classList.add('modo-impressao-relatorio');
+            const limparModoImpressao = () => {
+                document.body.classList.remove('modo-impressao-relatorio');
+                window.removeEventListener('afterprint', limparModoImpressao);
+            };
+            window.addEventListener('afterprint', limparModoImpressao);
+            setTimeout(() => window.print(), 50);
+        }
 
         function construirTelaVIDiversos() {
             nomeAbaAtiva = 'VI DIVERSOS';
