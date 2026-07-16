@@ -1445,11 +1445,11 @@
                 let dataEntregaInfo = formatarDataExcel(pzEntregaCru);
                 if (tipoProduto === "CAMISA") {
                     // Camisa é considerada atrasada quando o Status Camisa for diferente de
-                    // "CONCLUÍDO", "AG. EIXO" e "EXPEDIDO" e o Prazo de Entrega já tiver passado.
+                    // "CONCLUÍDO", "AG. EIXO", "AG. COLETAR" e "EXPEDIDO" e o Prazo de Entrega já tiver passado.
                     if (dataEntregaCamisaInfo.dataObjeto instanceof Date) {
                         const dpe = new Date(dataEntregaCamisaInfo.dataObjeto);
                         dpe.setHours(0,0,0,0);
-                        const statusOk = ['CONCLUIDO','CONCLUÍDO','AG EIXO','AG. EIXO','EXPEDIDO','EXPEDIDOS'].includes(_statusRef);
+                        const statusOk = ['CONCLUIDO','CONCLUÍDO','AG EIXO','AG. EIXO','EXPEDIDO','EXPEDIDOS','AG COLETAR','AG. COLETAR','AG COLETA','AG. COLETA'].includes(_statusRef);
                         if (!statusOk && dpe < hoje) isAtrasado = true;
                     }
                 } else {
