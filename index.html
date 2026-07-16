@@ -1447,7 +1447,7 @@
                         const dpe = new Date(dataEntregaInfo.dataObjeto);
                         dpe.setHours(0,0,0,0);
                         const diff = Math.ceil((dpe - hoje)/(1000*60*60*24));
-                        if (!['AG COLETAR','AG. COLETAR','AG COLETA','AG. COLETA','EXPEDIDO','EXPEDIDOS'].includes(statusUsinagem)) {
+                        if (!['AG COLETAR','AG. COLETAR','AG COLETA','AG. COLETA','EXPEDIDO','EXPEDIDOS','CONCLUIDO','CONCLUÍDO'].includes(statusUsinagem)) {
                             if (dpe < hoje) isAtrasado = true;
                             else if (diff>=0 && diff<=15) isProximaEntrega = true;
                         }
@@ -2077,13 +2077,15 @@
 
                 // Item Expedido: fica fora da listagem/card "Total" por padrão, só aparece em "Liberadas"
                 const isExpedido = ['EXPEDIDO','EXPEDIDOS'].includes(normalizarTextoParaFiltro(statusUs));
+                // Item Concluído: não deve ser considerado na aba de Atrasos
+                const isConcluido = ['CONCLUIDO','CONCLUÍDO'].includes(normalizarTextoParaFiltro(statusUs));
 
                 // Determine ATRASO: 
                 // If Usin.Real Acabamento == '-', analyse Usin.Real (Desbaste) vs Prazo Contratual
                 // Else analyse Usin.Real Acabamento vs Prazo Contratual
                 let isAtrasado = false;
                 const prazoObj = prazoContraInfo.dataObjeto;
-                if (prazoObj) {
+                if (prazoObj && !isExpedido && !isConcluido) {
                     const pz = new Date(prazoObj); pz.setHours(0,0,0,0);
                     if (!temAcabamento) {
                         // check desbaste
@@ -2449,11 +2451,13 @@
 
                 // Item Expedido: fica fora da listagem/card "Total" por padrão, só aparece em "Liberadas"
                 const isExpedido = ['EXPEDIDO','EXPEDIDOS'].includes(normalizarTextoParaFiltro(statusUs));
+                // Item Concluído: não deve ser considerado na aba de Atrasos
+                const isConcluido = ['CONCLUIDO','CONCLUÍDO'].includes(normalizarTextoParaFiltro(statusUs));
 
                 // ATRASO geral: Usin.Real (Acabamento) vs Prazo Contratual; se ainda não realizada, hoje vs Prazo
                 let isAtrasado = false;
                 const prazoObj = prazoContraInfo.dataObjeto;
-                if (prazoObj) {
+                if (prazoObj && !isExpedido && !isConcluido) {
                     const pz = new Date(prazoObj); pz.setHours(0,0,0,0);
                     if (temAcabamento) {
                         const rA = new Date(usinRealAcbInfo.dataObjeto); rA.setHours(0,0,0,0);
