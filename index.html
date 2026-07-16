@@ -2154,6 +2154,7 @@
 
                     const isExpedido  = ['EXPEDIDO','EXPEDIDOS'].includes(statusNorm);
                     const isAgFundido = ['AG FUNDIDO','AG. FUNDIDO','AG FUSAO','AG. FUSÃO','AG FUSÃO'].includes(statusNorm);
+                    const isAgColeta  = ['AG COLETAR','AG. COLETAR','AG COLETA','AG. COLETA'].includes(statusNorm);
                     let isLiberado;
                     if (cat.tipo === 'CAMISAS') {
                         isLiberado = ['CONCLUIDO','CONCLUÍDO','AG EIXO','AG. EIXO'].includes(statusNorm);
@@ -2173,7 +2174,7 @@
                         pzEntregaStr: pzEntregaInfo.stringLegivel, pzEntregaObj: pzEntregaInfo.dataObjeto,
                         statusTxt, statusNorm,
                         categoria: cat.tipo, categoriaLabel: cat.label,
-                        isAtrasado, isLiberado, isExpedido, isAgFundido
+                        isAtrasado, isLiberado, isExpedido, isAgFundido, isAgColeta
                     });
                 });
             });
@@ -2228,6 +2229,7 @@
                                 <option value="liberado">Liberado</option>
                                 <option value="expedido">Expedido</option>
                                 <option value="ag-fundido">AG. Fundido</option>
+                                <option value="ag-coleta">AG. Coleta</option>
                             </select>
                         </div>
                         <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:220px;flex:1;">
@@ -2238,6 +2240,10 @@
                             <button class="btn-sync" style="background:var(--accent)" onclick="relatorioFiltrar()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                                 <span class="btn-sync-label">Filtrar</span>
+                            </button>
+                            <button class="btn-sync" style="background:#64748b" onclick="relatorioLimparFiltros()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                <span class="btn-sync-label">Limpar</span>
                             </button>
                             <button class="btn-sync" style="background:#334155" onclick="relatorioGerarPDF()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
@@ -2290,6 +2296,7 @@
                 if (fStatus === 'liberado'   && !r.isLiberado)  return false;
                 if (fStatus === 'expedido'   && !r.isExpedido)  return false;
                 if (fStatus === 'ag-fundido' && !r.isAgFundido) return false;
+                if (fStatus === 'ag-coleta'  && !r.isAgColeta) return false;
                 if (fBusca) {
                     const alvo = normalizarTextoParaFiltro(`${r.pv} ${r.cliente} ${r.descricao}`);
                     if (!alvo.includes(fBusca)) return false;
@@ -2326,6 +2333,14 @@
             document.getElementById('relatorio-contador').textContent = `${relatorioListaFiltrada.length} itens`;
         }
 
+        function relatorioLimparFiltros() {
+            const campos = ['relatorio-filtro-cliente','relatorio-filtro-categoria','relatorio-filtro-status'];
+            campos.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            const busca = document.getElementById('relatorio-filtro-busca');
+            if (busca) busca.value = '';
+            relatorioFiltrar();
+        }
+
         function relatorioGerarPDF() {
             if (!relatorioListaFiltrada) relatorioListaFiltrada = [];
             const fCliente   = document.getElementById('relatorio-filtro-cliente')?.value || 'Todos';
@@ -2333,7 +2348,7 @@
             const fCategoria  = fCategoriaSel && fCategoriaSel.value
                 ? (RELATORIO_CATEGORIAS.find(c => c.tipo === fCategoriaSel.value)?.label || fCategoriaSel.value)
                 : 'Todas';
-            const statusLabels = { atraso:'Em Atraso', liberado:'Liberado', expedido:'Expedido', 'ag-fundido':'AG. Fundido' };
+            const statusLabels = { atraso:'Em Atraso', liberado:'Liberado', expedido:'Expedido', 'ag-fundido':'AG. Fundido', 'ag-coleta':'AG. Coleta' };
             const fStatusVal = document.getElementById('relatorio-filtro-status')?.value || '';
             const fStatus = fStatusVal ? statusLabels[fStatusVal] : 'Todos';
             const fBusca  = document.getElementById('relatorio-filtro-busca')?.value || '';
