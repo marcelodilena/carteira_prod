@@ -1390,8 +1390,8 @@
                 const qtdRaw    = buscarValor(linha,'Qtde')||buscarValor(linha,'Qtd')||buscarValor(linha,'Qtde.')||1;
                 const qtdNum    = parseInt(qtdRaw)||0;
                 const pzFundidoCru = buscarValor(linha,'Prazo Fund')||buscarValor(linha,'Prazo Fundido')||buscarValor(linha,'Data Prev. Fundido');
-                const pzEntregaCru = buscarValor(linha,'Prazo Entrega')||buscarValor(linha,'Data Prev. Entrega')||buscarValor(linha,'Prazo\nEntrega\nEixo')||buscarValor(linha,'Prazo Entrega Eixo');
-                const statusUsinagemCru = buscarValor(linha,'Status Usinagem')||buscarValor(linha,'Status Us.')||buscarValor(linha,'Status');
+                const pzEntregaCru = buscarValor(linha,'Prazo Entrega')||buscarValor(linha,'Data Prev. Entrega')||buscarValor(linha,'Prazo\nEntrega\nEixo')||buscarValor(linha,'Prazo Entrega Eixo')||buscarValor(linha,'Prazo\nEntrega\nCamisa')||buscarValor(linha,'Prazo Entrega Camisa');
+                const statusUsinagemCru = buscarValor(linha,'Status Usinagem')||buscarValor(linha,'Status Us.')||buscarValor(linha,'Status')||buscarValor(linha,'Status\nCamisa')||buscarValor(linha,'Status Camisa');
                 const observacaoCru = String(buscarValor(linha,'Observação')||buscarValor(linha,'Observacao')||buscarValor(linha,'Obs')).trim();
                 const statusUsinagem = normalizarTextoParaFiltro(statusUsinagemCru);
                 const des      = String(buscarValor(linha,'Des')||buscarValor(linha,'Des. Engenharia')).trim();
