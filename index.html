@@ -2137,6 +2137,7 @@
 
                     const qtd = parseInt(buscarValor(linha,'Qtde')||buscarValor(linha,'Qtd')||buscarValor(linha,'Qtde.')||1)||0;
                     const pzFundidoCru = buscarValor(linha,'Prazo Fund')||buscarValor(linha,'Prazo Fundido')||buscarValor(linha,'Data Prev. Fundido');
+                    const nrEixo = String(buscarValor(linha,'Nº Eixo2')||buscarValor(linha,'Nº Eixo')||'').trim();
 
                     let statusCru, pzEntregaCru;
                     if (cat.tipo === 'CAMISAS') {
@@ -2169,7 +2170,7 @@
                     }
 
                     relatorioDadosCompletos.push({
-                        pv, cliente, descricao, qtd,
+                        pv, cliente, descricao, qtd, nrEixo,
                         pzFundidoStr: pzFundidoInfo.stringLegivel, pzFundidoObj: pzFundidoInfo.dataObjeto,
                         pzEntregaStr: pzEntregaInfo.stringLegivel, pzEntregaObj: pzEntregaInfo.dataObjeto,
                         statusTxt, statusNorm,
@@ -2267,6 +2268,7 @@
                                     <th>Cliente</th>
                                     <th>Descrição</th>
                                     <th style="text-align:center">Qtde.</th>
+                                    <th style="text-align:center">Nº Eixo</th>
                                     <th>Prazo Fundido</th>
                                     <th>Prazo Entrega</th>
                                     <th>Status</th>
@@ -2313,7 +2315,7 @@
             const tbody = document.getElementById('tbody-relatorio');
             tbody.innerHTML = '';
             if (relatorioListaFiltrada.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-3)">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
             } else {
                 relatorioListaFiltrada.forEach(r => {
                     const tr = document.createElement('tr');
@@ -2323,6 +2325,7 @@
                         <td>${escaparHTML(r.cliente)||'—'}</td>
                         <td style="color:var(--text-2)">${escaparHTML(r.descricao)||'—'}</td>
                         <td style="text-align:center;font-weight:600;color:var(--accent)">${r.qtd}</td>
+                        <td style="text-align:center;color:var(--text-2)">${escaparHTML(r.nrEixo)||'—'}</td>
                         <td style="color:var(--text-2)">${r.pzFundidoStr||'—'}</td>
                         <td style="color:${corPrazo};font-weight:${r.isAtrasado?'600':'400'}">${r.pzEntregaStr||'—'}</td>
                         <td><span class="badge-status-usinagem">${escaparHTML(r.statusTxt)||'—'}</span></td>`;
@@ -2362,6 +2365,7 @@
                     <td>${escaparHTML(r.cliente)||'—'}</td>
                     <td>${escaparHTML(r.descricao)||'—'}</td>
                     <td class="num">${r.qtd}</td>
+                    <td class="num">${escaparHTML(r.nrEixo)||'—'}</td>
                     <td>${r.pzFundidoStr||'—'}</td>
                     <td>${r.pzEntregaStr||'—'}</td>
                     <td>${escaparHTML(r.statusTxt)||'—'}</td>
@@ -2385,10 +2389,10 @@
                     <thead>
                         <tr>
                             <th>PV</th><th>Cliente</th><th>Descrição</th><th class="num">Qtde.</th>
-                            <th>Prazo Fundido</th><th>Prazo Entrega</th><th>Status</th>
+                            <th class="num">Nº Eixo</th><th>Prazo Fundido</th><th>Prazo Entrega</th><th>Status</th>
                         </tr>
                     </thead>
-                    <tbody>${linhasHTML || `<tr><td colspan="7" style="text-align:center">Nenhum registro encontrado.</td></tr>`}</tbody>
+                    <tbody>${linhasHTML || `<tr><td colspan="8" style="text-align:center">Nenhum registro encontrado.</td></tr>`}</tbody>
                 </table>
                 <div class="relatorio-print-rodape">${relatorioListaFiltrada.length} registro(s) · Carteira Produção · Fundição Moreno</div>
             `;
