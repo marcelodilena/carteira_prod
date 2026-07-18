@@ -1047,6 +1047,8 @@
         let camisaEtapasOPPorIndice = [];
         let eixosEtapasOPPorIndice = [];
         let reformaDiversasEtapasOPPorIndice = [];
+        let pentesEtapasOPPorIndice = [];
+        let rodetesNovosEtapasOPPorIndice = [];
         // Índice da aba EIXOS por "Nº Eixo" (texto normalizado) -> {statusUsinagem, observacao, etapas...}
         // Usado pelo modal "Andamento do Eixo", aberto ao clicar no Nº Eixo dentro da tabela CAMISA.
         let eixosPorNumero = {};
@@ -1092,6 +1094,8 @@
                 camisaEtapasOPPorIndice = [];
                 eixosEtapasOPPorIndice = [];
                 reformaDiversasEtapasOPPorIndice = [];
+                pentesEtapasOPPorIndice = [];
+                rodetesNovosEtapasOPPorIndice = [];
                 workbook.SheetNames.forEach(name => {
                     const chaveAba = normalizarTextoParaFiltro(name);
                     // blankrows:true garante que a ordem/índice das linhas retornadas seja sempre
@@ -1106,6 +1110,12 @@
                     }
                     if (chaveAba === normalizarTextoParaFiltro("REFORMA DIVERSAS")) {
                         reformaDiversasEtapasOPPorIndice = extrairEtapasColunasOP(workbook.Sheets[name]);
+                    }
+                    if (chaveAba === normalizarTextoParaFiltro("PENTES")) {
+                        pentesEtapasOPPorIndice = extrairEtapasColunasOP(workbook.Sheets[name]);
+                    }
+                    if (chaveAba === normalizarTextoParaFiltro("RODETES NOVOS")) {
+                        rodetesNovosEtapasOPPorIndice = extrairEtapasColunasOP(workbook.Sheets[name]);
                     }
                 });
                 construirIndiceEixos();
@@ -1481,7 +1491,9 @@
                 // da varredura feita em extrairEtapasColunasOP no carregamento da planilha.
                 const etapasCamisa = (tipoProduto === "CAMISA") ? (camisaEtapasOPPorIndice[idxLinha] || [])
                     : (tipoProduto === "EIXOS") ? (eixosEtapasOPPorIndice[idxLinha] || [])
-                    : (tipoProduto === "REFORMA DIVERSAS") ? (reformaDiversasEtapasOPPorIndice[idxLinha] || []) : [];
+                    : (tipoProduto === "REFORMA DIVERSAS") ? (reformaDiversasEtapasOPPorIndice[idxLinha] || [])
+                    : (tipoProduto === "PENTES") ? (pentesEtapasOPPorIndice[idxLinha] || [])
+                    : (tipoProduto === "RODETES NOVOS") ? (rodetesNovosEtapasOPPorIndice[idxLinha] || []) : [];
                 // Mantido para compatibilidade com a busca em texto livre (mostra só as etapas pendentes)
                 const recursoCamisaPendente = etapasCamisa.filter(e=>!e.concluida).map(e=>e.texto).join(' / ');
 
@@ -1679,21 +1691,28 @@
                     <td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
             } else {
                 let adicionaisCol='', adicionaisFiltro='';
+                // Peça/Seq. saíram das abas Pentes e Rodetes Novos (colunas "Código" e
+                // "Sequência do Código" removidas na planilha); Bagaceiras continua com elas.
+                const mostraPecaSeq = (tipoProduto==="BAGACEIRAS");
                 if (tipoProduto==="BAGACEIRAS") {
                     colspanRestante=10;
                     adicionaisCol=`${thOrdenavel('DES.','des',true)}${thOrdenavel('PERFIL','perfil',true)}${thOrdenavel('SERRAR','serrar',true)}${thOrdenavel('SOLDA DURA','soldadura',true)}${thOrdenavel('ENCAIXE','encaixe',true)}${thOrdenavel('FURAÇÃO','furacao',true)}${thOrdenavel('ACABAM.','acabam',true)}${thOrdenavel('LIBERAÇÃO','liberacao',true)}${thOrdenavel('STATUS USINAGEM','statusUsinagem')}`;
                     adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-perfil" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-serrar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-furacao" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-acabam" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-liberacao" class="table-filter-select"></select></td><td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
                 } else if (tipoProduto==="PENTES") {
-                    colspanRestante=3;
-                    adicionaisCol=`${thOrdenavel('DES. ENG.','des',true)}${thOrdenavel('STATUS USINAGEM','statusUsinagem')}`;
-                    adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
+                    // Andamento apresentado como nas abas Camisa/Eixos: uma única coluna
+                    // "Recursos" com as etapas OP1..OP5 (verde = concluída, riscado).
+                    colspanRestante=6;
+                    adicionaisCol=`${thOrdenavel('DES. ENG.','des',true)}${thOrdenavel('Recursos','recursoCamisa')}${thOrdenavel('STATUS USINAGEM','statusUsinagem')}`;
+                    adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td><input type="text" id="filtro-col-recurso-camisa" class="table-filter-input" placeholder="Buscar etapa..."></td><td><select id="filtro-col-liberacao" class="table-filter-select"></select></td>`;
                 } else if (tipoProduto==="RODETES NOVOS") {
-                    colspanRestante=9;
-                    adicionaisCol=`${thOrdenavel('DES.','des',true)}${thOrdenavel('DESB.','plainar',true)}${thOrdenavel('T.T.','facear',true)}${thOrdenavel('US. FINAL','serrar',true)}${thOrdenavel('FUNDO D.','soldadura',true)}${thOrdenavel('ACABAM','encaixe',true)}${thOrdenavel('LIBERAÇÃO','liberacao',true)}${thOrdenavel('STATUS USINAGEM','statusUsinagem')}`;
-                    adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-plainar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-facear" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-serrar" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-soldadura" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-encaixe" class="table-filter-select"></select></td><td class="centralized-status"><select id="filtro-col-liberacao" class="table-filter-select"></select></td><td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
+                    // Andamento apresentado como nas abas Camisa/Eixos: uma única coluna
+                    // "Recursos" com as etapas OP1..OP7 (verde = concluída, riscado).
+                    colspanRestante=6;
+                    adicionaisCol=`${thOrdenavel('DES.','des',true)}${thOrdenavel('Recursos','recursoCamisa')}${thOrdenavel('STATUS USINAGEM','statusUsinagem')}`;
+                    adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td><input type="text" id="filtro-col-recurso-camisa" class="table-filter-input" placeholder="Buscar etapa..."></td><td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
                 }
-                colunasHTML=`${thOrdenavel('PV / OS','pv')}${thOrdenavel('Cliente','cliente')}${thOrdenavel('Peça','peca')}${thOrdenavel('Seq.','seq')}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtde.','qtd',true)}${thOrdenavel('Prazo Fundido','pzFundidoObj')}${thOrdenavel('Prazo Entrega','pzEntregaObj')}${adicionaisCol}`;
-                colunasFiltroHTML=`<td><select id="filtro-col-pv" class="table-filter-select"></select></td><td><select id="filtro-col-cliente" class="table-filter-select"></select></td><td><select id="filtro-col-peca" class="table-filter-select"></select></td><td><select id="filtro-col-seq" class="table-filter-select"></select></td><td><select id="filtro-col-desc" class="table-filter-select"></select></td><td><select id="filtro-col-qtd" class="table-filter-select"></select></td><td><input type="text" id="filtro-col-pzfundido" class="table-filter-input" placeholder="ex: 07/2026"></td><td><input type="text" id="filtro-col-pzentrega" class="table-filter-input" placeholder="ex: 07/2026"></td>${adicionaisFiltro}`;
+                colunasHTML=`${thOrdenavel('PV / OS','pv')}${thOrdenavel('Cliente','cliente')}${mostraPecaSeq?`${thOrdenavel('Peça','peca')}${thOrdenavel('Seq.','seq')}`:''}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtde.','qtd',true)}${thOrdenavel('Prazo Fundido','pzFundidoObj')}${thOrdenavel('Prazo Entrega','pzEntregaObj')}${adicionaisCol}`;
+                colunasFiltroHTML=`<td><select id="filtro-col-pv" class="table-filter-select"></select></td><td><select id="filtro-col-cliente" class="table-filter-select"></select></td>${mostraPecaSeq?`<td><select id="filtro-col-peca" class="table-filter-select"></select></td><td><select id="filtro-col-seq" class="table-filter-select"></select></td>`:''}<td><select id="filtro-col-desc" class="table-filter-select"></select></td><td><select id="filtro-col-qtd" class="table-filter-select"></select></td><td><input type="text" id="filtro-col-pzfundido" class="table-filter-input" placeholder="ex: 07/2026"></td><td><input type="text" id="filtro-col-pzentrega" class="table-filter-input" placeholder="ex: 07/2026"></td>${adicionaisFiltro}`;
             }
 
             areaDestino.innerHTML = `
@@ -1719,7 +1738,7 @@
                             <tbody id="tbody-dados-painel"></tbody>
                             <tfoot>
                                 <tr>
-                                    <td id="celula-texto-soma" colspan="${tipoProduto==="CARTEIRA GERAL"?4:(tipoProduto==="CAMISA"?4:(tipoProduto==="EIXOS"?4:(tipoProduto==="REFORMA DIVERSAS"?4:5)))}" style="text-align:right;color:var(--text-2)">SOMA TOTAL DAS PEÇAS:</td>
+                                    <td id="celula-texto-soma" colspan="${tipoProduto==="CARTEIRA GERAL"?4:(tipoProduto==="CAMISA"?4:(tipoProduto==="EIXOS"?4:(tipoProduto==="REFORMA DIVERSAS"?4:((tipoProduto==="PENTES"||tipoProduto==="RODETES NOVOS")?3:5))))}" style="text-align:right;color:var(--text-2)">SOMA TOTAL DAS PEÇAS:</td>
                                     <td id="celula-soma-total" style="text-align:center;color:var(--accent);font-size:1rem;font-weight:700">0</td>
                                     <td id="celula-espaco-tfoot" colspan="${colspanRestante}"></td>
                                 </tr>
@@ -1843,10 +1862,13 @@
                 if (f.fFuracao && normalizarTextoParaFiltro(vf.furacao)   !== f.fFuracao) return false;
                 if (f.fAcabam  && normalizarTextoParaFiltro(vf.acabam)    !== f.fAcabam)  return false;
                 if (f.fStatusGeral && normalizarTextoParaFiltro(vf.statusUsinagem) !== f.fStatusGeral) return false;
-                if (nomeAbaAtiva==="BAGACEIRAS"||nomeAbaAtiva==="RODETES NOVOS") {
+                if (nomeAbaAtiva==="BAGACEIRAS") {
                     if (f.fLiberacao && normalizarTextoParaFiltro(vf.liberacao) !== f.fLiberacao) return false;
                 } else if (nomeAbaAtiva==="PENTES"||nomeAbaAtiva==="PERIFÉRICOS") {
                     if (f.fLiberacao && normalizarTextoParaFiltro(vf.statusUsinagem) !== f.fLiberacao) return false;
+                    if (nomeAbaAtiva==="PENTES" && f.fRecursoCamisa && !normalizarTextoParaFiltro(vf.recursoCamisa).includes(f.fRecursoCamisa)) return false;
+                } else if (nomeAbaAtiva==="RODETES NOVOS") {
+                    if (f.fRecursoCamisa && !normalizarTextoParaFiltro(vf.recursoCamisa).includes(f.fRecursoCamisa)) return false;
                 } else if (nomeAbaAtiva==="CAMISA") {
                     if (f.fBit        && normalizarTextoParaFiltro(vf.bit)           !== f.fBit)           return false;
                     if (f.fTipoCamisa && normalizarTextoParaFiltro(vf.tipoCamisa)    !== f.fTipoCamisa)    return false;
@@ -1900,7 +1922,7 @@
             atualizarCardsFiltrados(linhasFiltrosColuna);
 
             if (linhas.length===0) {
-                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?18:(nomeAbaAtiva==="PENTES"?11:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?17:(nomeAbaAtiva==="RODETES NOVOS"?17:(nomeAbaAtiva==="EIXOS"?14:(nomeAbaAtiva==="REFORMA DIVERSAS"?9:16)))))));
+                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?18:(nomeAbaAtiva==="PENTES"?10:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?17:(nomeAbaAtiva==="RODETES NOVOS"?10:(nomeAbaAtiva==="EIXOS"?14:(nomeAbaAtiva==="REFORMA DIVERSAS"?9:16)))))));
                 tbody.innerHTML=`<tr><td colspan="${totalColspan}" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro corresponde aos filtros aplicados.</td></tr>`;
                 return;
             }
@@ -1992,16 +2014,16 @@
                     let adicionais='';
                     if (nomeAbaAtiva==="BAGACEIRAS") {
                         adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td class="centralized-status">${formatarStatusComIcone(vf.perfil)}</td><td class="centralized-status">${formatarStatusComIcone(vf.serrar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.soldadura)}</td><td class="centralized-status">${formatarStatusComIcone(vf.encaixe)}</td><td class="centralized-status">${formatarStatusComIcone(vf.furacao)}</td><td class="centralized-status">${formatarStatusComIcone(vf.acabam)}</td><td class="centralized-status">${formatarStatusComIcone(vf.liberacao)}</td><td>${statusBadge(vf.statusUsinagem)}</td>`;
-                    } else if (nomeAbaAtiva==="PENTES") {
-                        adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td>${statusBadge(vf.statusUsinagem)}</td>`;
-                    } else if (nomeAbaAtiva==="RODETES NOVOS") {
-                        adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td class="centralized-status">${formatarStatusComIcone(vf.plainar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.facear)}</td><td class="centralized-status">${formatarStatusComIcone(vf.serrar)}</td><td class="centralized-status">${formatarStatusComIcone(vf.soldadura)}</td><td class="centralized-status">${formatarStatusComIcone(vf.encaixe)}</td><td class="centralized-status">${formatarStatusComIcone(vf.liberacao)}</td><td>${statusBadge(vf.statusUsinagem)}</td>`;
+                    } else if (nomeAbaAtiva==="PENTES" || nomeAbaAtiva==="RODETES NOVOS") {
+                        // Mesma apresentação de andamento usada em Camisa/Eixos: coluna única
+                        // "Recursos" com as etapas OP1..OPn (concluída = riscada/verde no Excel).
+                        adicionais=`<td class="centralized-status">${formatarStatusComIcone(vf.des)}</td><td style="font-size:0.75rem">${renderEtapasCamisa(vf.etapasCamisa)}</td><td>${statusBadge(vf.statusUsinagem)}</td>`;
                     }
+                    const mostraPecaSeqLinha = (nomeAbaAtiva==="BAGACEIRAS");
                     tr.innerHTML=`
                         <td><b style="color:var(--text-1)">${vf.pv||'—'}</b></td>
                         <td>${vf.cliente}</td>
-                        <td style="color:var(--text-2)">${vf.peca}</td>
-                        <td style="color:var(--text-2)">${vf.seq}</td>
+                        ${mostraPecaSeqLinha ? `<td style="color:var(--text-2)">${vf.peca}</td><td style="color:var(--text-2)">${vf.seq}</td>` : ''}
                         <td style="color:var(--text-2)">${vf.descricao}</td>
                         <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
                         <td style="color:var(--text-2)">${vf.pzFundidoStr}</td>
