@@ -2177,6 +2177,20 @@
             { tipo: 'REFORMA DIVERSAS',  label: 'Reforma Diversas' },
         ];
 
+        // Devolve o array de etapas OP1..OPn (por índice de linha) correspondente à categoria
+        // do relatório, reaproveitando os mesmos índices já montados para as telas de cada aba.
+        function relatorioEtapasArrayPorCategoria(tipo) {
+            switch (tipo) {
+                case 'BAGACEIRAS':       return bagaceirasEtapasOPPorIndice;
+                case 'PENTES':           return pentesEtapasOPPorIndice;
+                case 'RODETES NOVOS':    return rodetesNovosEtapasOPPorIndice;
+                case 'CAMISAS':          return camisaEtapasOPPorIndice;
+                case 'EIXOS':            return eixosEtapasOPPorIndice;
+                case 'REFORMA DIVERSAS': return reformaDiversasEtapasOPPorIndice;
+                default:                 return [];
+            }
+        }
+
         function relatorioMontarDados() {
             const hoje = new Date(); hoje.setHours(0,0,0,0);
             const excluidosAtraso = ['AG COLETAR','AG. COLETAR','AG COLETA','AG. COLETA','EXPEDIDO','EXPEDIDOS','CONCLUIDO','CONCLUÍDO'];
@@ -2184,7 +2198,8 @@
 
             RELATORIO_CATEGORIAS.forEach(cat => {
                 const linhas = abasPlanilha[normalizarTextoParaFiltro(cat.tipo)] || [];
-                linhas.forEach(linha => {
+                const etapasArray = relatorioEtapasArrayPorCategoria(cat.tipo);
+                linhas.forEach((linha, idxLinha) => {
                     const pv        = String(buscarValor(linha,'PV')||buscarValor(linha,'O.S.')||buscarValor(linha,'OS')).trim();
                     const cliente   = String(buscarValor(linha,'Cliente')).trim();
                     const descricao = String(buscarValor(linha,'Descrição')||buscarValor(linha,'Descricao')).trim();
@@ -2194,6 +2209,9 @@
                     const qtd = parseInt(buscarValor(linha,'Qtde')||buscarValor(linha,'Qtd')||buscarValor(linha,'Qtde.')||1)||0;
                     const pzFundidoCru = buscarValor(linha,'Prazo Fund')||buscarValor(linha,'Prazo Fundido')||buscarValor(linha,'Data Prev. Fundido');
                     const nrEixo = String(buscarValor(linha,'Nº Eixo2')||buscarValor(linha,'Nº Eixo')||'').trim();
+                    const observacao = String(buscarValor(linha,'Observação')||buscarValor(linha,'Observacao')||buscarValor(linha,'Obs')||buscarValor(linha,'Obs.')).trim();
+                    const etapas = etapasArray[idxLinha] || [];
+                    const recursosTexto = etapas.map(e => e.texto).join(' / ');
 
                     let statusCru, pzEntregaCru;
                     if (cat.tipo === 'CAMISAS') {
@@ -2231,7 +2249,8 @@
                         pzEntregaStr: pzEntregaInfo.stringLegivel, pzEntregaObj: pzEntregaInfo.dataObjeto,
                         statusTxt, statusNorm,
                         categoria: cat.tipo, categoriaLabel: cat.label,
-                        isAtrasado, isLiberado, isExpedido, isAgFundido, isAgColeta
+                        isAtrasado, isLiberado, isExpedido, isAgFundido, isAgColeta,
+                        etapas, recursosTexto, observacao
                     });
                 });
             });
@@ -2290,6 +2309,14 @@
                                 <option value="ag-coleta">AG. Coleta</option>
                             </select>
                         </div>
+                        <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:150px;">
+                            <label style="font-size:0.72rem;color:var(--text-3);font-weight:600;text-transform:uppercase;">Entrega de</label>
+                            <input type="date" id="relatorio-filtro-prazo-de" class="table-filter-input" style="width:100%;">
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:150px;">
+                            <label style="font-size:0.72rem;color:var(--text-3);font-weight:600;text-transform:uppercase;">Entrega até</label>
+                            <input type="date" id="relatorio-filtro-prazo-ate" class="table-filter-input" style="width:100%;">
+                        </div>
                         <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:220px;flex:1;">
                             <label style="font-size:0.72rem;color:var(--text-3);font-weight:600;text-transform:uppercase;">Contém (PV, Cliente ou Descrição)</label>
                             <input type="text" id="relatorio-filtro-busca" class="table-filter-input" style="width:100%;" placeholder="Digite para buscar...">
@@ -2329,6 +2356,8 @@
                                     <th class="th-sort" data-sort="pzFundidoObj" onclick="relatorioOrdenar('pzFundidoObj', this)">Prazo Fundido<span class="sort-arrow"></span></th>
                                     <th class="th-sort" data-sort="pzEntregaObj" onclick="relatorioOrdenar('pzEntregaObj', this)">Prazo Entrega<span class="sort-arrow"></span></th>
                                     <th class="th-sort" data-sort="statusTxt" onclick="relatorioOrdenar('statusTxt', this)">Status<span class="sort-arrow"></span></th>
+                                    <th class="th-sort" data-sort="recursosTexto" onclick="relatorioOrdenar('recursosTexto', this)">Recursos<span class="sort-arrow"></span></th>
+                                    <th class="th-sort" data-sort="observacao" onclick="relatorioOrdenar('observacao', this)">Observações<span class="sort-arrow"></span></th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-relatorio"></tbody>
@@ -2347,6 +2376,12 @@
             const fCategoria = (document.getElementById('relatorio-filtro-categoria')?.value || '');
             const fStatus    = (document.getElementById('relatorio-filtro-status')?.value || '');
             const fBusca     = normalizarTextoParaFiltro(document.getElementById('relatorio-filtro-busca')?.value || '');
+            const fPrazoDeVal  = document.getElementById('relatorio-filtro-prazo-de')?.value || '';
+            const fPrazoAteVal = document.getElementById('relatorio-filtro-prazo-ate')?.value || '';
+            // Datas no formato "YYYY-MM-DDT00:00:00" (fuso local) para comparar só o dia,
+            // igual ao restante do painel (sem considerar hora).
+            const fPrazoDe  = fPrazoDeVal  ? new Date(fPrazoDeVal + 'T00:00:00')  : null;
+            const fPrazoAte = fPrazoAteVal ? new Date(fPrazoAteVal + 'T00:00:00') : null;
 
             relatorioListaFiltrada = relatorioDadosCompletos.filter(r => {
                 if (fCliente && r.cliente !== fCliente) return false;
@@ -2356,6 +2391,12 @@
                 if (fStatus === 'expedido'   && !r.isExpedido)  return false;
                 if (fStatus === 'ag-fundido' && !r.isAgFundido) return false;
                 if (fStatus === 'ag-coleta'  && !r.isAgColeta) return false;
+                if (fPrazoDe || fPrazoAte) {
+                    if (!(r.pzEntregaObj instanceof Date)) return false;
+                    const d = new Date(r.pzEntregaObj); d.setHours(0,0,0,0);
+                    if (fPrazoDe  && d < fPrazoDe)  return false;
+                    if (fPrazoAte && d > fPrazoAte) return false;
+                }
                 if (fBusca) {
                     const alvo = normalizarTextoParaFiltro(`${r.pv} ${r.cliente} ${r.descricao}`);
                     if (!alvo.includes(fBusca)) return false;
@@ -2386,11 +2427,16 @@
             const tbody = document.getElementById('tbody-relatorio');
             tbody.innerHTML = '';
             if (relatorioListaFiltrada.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-3)">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-3)">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
             } else {
                 relatorioListaFiltrada.forEach(r => {
                     const tr = document.createElement('tr');
                     const corPrazo = r.isAtrasado ? '#ef4444' : 'var(--text-1)';
+                    let obsHTML = '—';
+                    if (r.observacao && r.observacao!=='undefined' && r.observacao!=='0' && r.observacao!=='nan') {
+                        const txt = r.observacao.replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/\n/g,' ');
+                        obsHTML = `<button class="btn-obs-trigger" onclick="abrirModalObservacao('${txt}')" title="Ver nota">💬 Ver nota</button>`;
+                    }
                     tr.innerHTML = `
                         <td><b style="color:var(--text-1)">${escaparHTML(r.pv)||'—'}</b></td>
                         <td>${escaparHTML(r.cliente)||'—'}</td>
@@ -2399,7 +2445,9 @@
                         <td style="text-align:center;color:var(--text-2)">${escaparHTML(r.nrEixo)||'—'}</td>
                         <td style="color:var(--text-2)">${r.pzFundidoStr||'—'}</td>
                         <td style="color:${corPrazo};font-weight:${r.isAtrasado?'600':'400'}">${r.pzEntregaStr||'—'}</td>
-                        <td><span class="badge-status-usinagem">${escaparHTML(r.statusTxt)||'—'}</span></td>`;
+                        <td><span class="badge-status-usinagem">${escaparHTML(r.statusTxt)||'—'}</span></td>
+                        <td style="font-size:0.75rem">${renderEtapasCamisa(r.etapas)}</td>
+                        <td class="centralized-status">${obsHTML}</td>`;
                     tbody.appendChild(tr);
                 });
             }
@@ -2425,7 +2473,7 @@
         }
 
         function relatorioLimparFiltros() {
-            const campos = ['relatorio-filtro-cliente','relatorio-filtro-categoria','relatorio-filtro-status'];
+            const campos = ['relatorio-filtro-cliente','relatorio-filtro-categoria','relatorio-filtro-status','relatorio-filtro-prazo-de','relatorio-filtro-prazo-ate'];
             campos.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
             const busca = document.getElementById('relatorio-filtro-busca');
             if (busca) busca.value = '';
@@ -2449,6 +2497,13 @@
             const fStatusVal = document.getElementById('relatorio-filtro-status')?.value || '';
             const fStatus = fStatusVal ? statusLabels[fStatusVal] : 'Todos';
             const fBusca  = document.getElementById('relatorio-filtro-busca')?.value || '';
+            const fPrazoDeVal  = document.getElementById('relatorio-filtro-prazo-de')?.value || '';
+            const fPrazoAteVal = document.getElementById('relatorio-filtro-prazo-ate')?.value || '';
+            const formatarDataBR = (iso) => { const [a,m,d] = iso.split('-'); return `${d}/${m}/${a}`; };
+            let fPrazoResumo = null;
+            if (fPrazoDeVal && fPrazoAteVal) fPrazoResumo = `Entrega: ${formatarDataBR(fPrazoDeVal)} a ${formatarDataBR(fPrazoAteVal)}`;
+            else if (fPrazoDeVal) fPrazoResumo = `Entrega a partir de ${formatarDataBR(fPrazoDeVal)}`;
+            else if (fPrazoAteVal) fPrazoResumo = `Entrega até ${formatarDataBR(fPrazoAteVal)}`;
 
             const agora = new Date();
             const dataGeracao = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR');
@@ -2463,12 +2518,15 @@
                     <td>${r.pzFundidoStr||'—'}</td>
                     <td>${r.pzEntregaStr||'—'}</td>
                     <td>${escaparHTML(r.statusTxt)||'—'}</td>
+                    <td>${renderEtapasCamisa(r.etapas)}</td>
+                    <td>${escaparHTML(r.observacao)||'—'}</td>
                 </tr>`).join('');
 
             const filtrosResumo = [
                 `Cliente: ${escaparHTML(fCliente || 'Todos')}`,
                 `Categoria: ${escaparHTML(fCategoria)}`,
                 `Status: ${escaparHTML(fStatus)}`,
+                fPrazoResumo ? escaparHTML(fPrazoResumo) : null,
                 fBusca ? `Busca: "${escaparHTML(fBusca)}"` : null
             ].filter(Boolean).join('  ·  ');
 
@@ -2484,9 +2542,10 @@
                         <tr>
                             <th>PV</th><th>Cliente</th><th>Descrição</th><th class="num">Qtde.</th>
                             <th class="num">Nº Eixo</th><th>Prazo Fundido</th><th>Prazo Entrega</th><th>Status</th>
+                            <th>Recursos</th><th>Observações</th>
                         </tr>
                     </thead>
-                    <tbody>${linhasHTML || `<tr><td colspan="8" style="text-align:center">Nenhum registro encontrado.</td></tr>`}</tbody>
+                    <tbody>${linhasHTML || `<tr><td colspan="10" style="text-align:center">Nenhum registro encontrado.</td></tr>`}</tbody>
                 </table>
                 <div class="relatorio-print-rodape">${relatorioListaFiltrada.length} registro(s) · Carteira Produção · Fundição Moreno</div>
             `;
