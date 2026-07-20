@@ -2209,6 +2209,8 @@
                     const qtd = parseInt(buscarValor(linha,'Qtde')||buscarValor(linha,'Qtd')||buscarValor(linha,'Qtde.')||1)||0;
                     const pzFundidoCru = buscarValor(linha,'Prazo Fund')||buscarValor(linha,'Prazo Fundido')||buscarValor(linha,'Data Prev. Fundido');
                     const nrEixo = String(buscarValor(linha,'Nº Eixo2')||buscarValor(linha,'Nº Eixo')||'').trim();
+                    const peca = String(buscarValor(linha,'O.S./Peça')||buscarValor(linha,'O.S./Peca')||buscarValor(linha,'OS/Peça')||buscarValor(linha,'OS/Peças')||buscarValor(linha,'Peça')||buscarValor(linha,'Peca')||buscarValor(linha,'Cód.')||buscarValor(linha,'Cod.')).trim();
+                    const seq  = String(buscarValor(linha,'Seq')||buscarValor(linha,'Seq.')||buscarValor(linha,'Item2')).trim();
                     const observacao = String(buscarValor(linha,'Observação')||buscarValor(linha,'Observacao')||buscarValor(linha,'Obs')||buscarValor(linha,'Obs.')).trim();
                     const etapas = etapasArray[idxLinha] || [];
                     const recursosTexto = etapas.map(e => e.texto).join(' / ');
@@ -2244,7 +2246,7 @@
                     }
 
                     relatorioDadosCompletos.push({
-                        pv, cliente, descricao, qtd, nrEixo,
+                        pv, cliente, descricao, qtd, nrEixo, peca, seq,
                         pzFundidoStr: pzFundidoInfo.stringLegivel, pzFundidoObj: pzFundidoInfo.dataObjeto,
                         pzEntregaStr: pzEntregaInfo.stringLegivel, pzEntregaObj: pzEntregaInfo.dataObjeto,
                         statusTxt, statusNorm,
@@ -2353,6 +2355,8 @@
                                     <th class="th-sort" data-sort="descricao" onclick="relatorioOrdenar('descricao', this)">Descrição<span class="sort-arrow"></span></th>
                                     <th class="th-sort" style="text-align:center" data-sort="qtd" onclick="relatorioOrdenar('qtd', this)">Qtde.<span class="sort-arrow"></span></th>
                                     <th class="th-sort" style="text-align:center" data-sort="nrEixo" onclick="relatorioOrdenar('nrEixo', this)">Nº Eixo<span class="sort-arrow"></span></th>
+                                    <th class="th-sort" data-sort="peca" onclick="relatorioOrdenar('peca', this)">OS/Peças<span class="sort-arrow"></span></th>
+                                    <th class="th-sort" style="text-align:center" data-sort="seq" onclick="relatorioOrdenar('seq', this)">Seq.<span class="sort-arrow"></span></th>
                                     <th class="th-sort" data-sort="pzFundidoObj" onclick="relatorioOrdenar('pzFundidoObj', this)">Prazo Fundido<span class="sort-arrow"></span></th>
                                     <th class="th-sort" data-sort="pzEntregaObj" onclick="relatorioOrdenar('pzEntregaObj', this)">Prazo Entrega<span class="sort-arrow"></span></th>
                                     <th class="th-sort" data-sort="statusTxt" onclick="relatorioOrdenar('statusTxt', this)">Status<span class="sort-arrow"></span></th>
@@ -2427,7 +2431,7 @@
             const tbody = document.getElementById('tbody-relatorio');
             tbody.innerHTML = '';
             if (relatorioListaFiltrada.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--text-3)">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:2rem;color:var(--text-3)">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
             } else {
                 relatorioListaFiltrada.forEach(r => {
                     const tr = document.createElement('tr');
@@ -2443,6 +2447,8 @@
                         <td style="color:var(--text-2)">${escaparHTML(r.descricao)||'—'}</td>
                         <td style="text-align:center;font-weight:600;color:var(--accent)">${r.qtd}</td>
                         <td style="text-align:center;color:var(--text-2)">${escaparHTML(r.nrEixo)||'—'}</td>
+                        <td style="color:var(--text-2)">${escaparHTML(r.peca)||'—'}</td>
+                        <td style="text-align:center;color:var(--text-2)">${escaparHTML(r.seq)||'—'}</td>
                         <td style="color:var(--text-2)">${r.pzFundidoStr||'—'}</td>
                         <td style="color:${corPrazo};font-weight:${r.isAtrasado?'600':'400'}">${r.pzEntregaStr||'—'}</td>
                         <td><span class="badge-status-usinagem">${escaparHTML(r.statusTxt)||'—'}</span></td>
@@ -2515,6 +2521,8 @@
                     <td>${escaparHTML(r.descricao)||'—'}</td>
                     <td class="num">${r.qtd}</td>
                     <td class="num">${escaparHTML(r.nrEixo)||'—'}</td>
+                    <td>${escaparHTML(r.peca)||'—'}</td>
+                    <td class="num">${escaparHTML(r.seq)||'—'}</td>
                     <td>${r.pzFundidoStr||'—'}</td>
                     <td>${r.pzEntregaStr||'—'}</td>
                     <td>${escaparHTML(r.statusTxt)||'—'}</td>
@@ -2541,11 +2549,11 @@
                     <thead>
                         <tr>
                             <th>PV</th><th>Cliente</th><th>Descrição</th><th class="num">Qtde.</th>
-                            <th class="num">Nº Eixo</th><th>Prazo Fundido</th><th>Prazo Entrega</th><th>Status</th>
+                            <th class="num">Nº Eixo</th><th>OS/Peças</th><th class="num">Seq.</th><th>Prazo Fundido</th><th>Prazo Entrega</th><th>Status</th>
                             <th>Recursos</th><th>Observações</th>
                         </tr>
                     </thead>
-                    <tbody>${linhasHTML || `<tr><td colspan="10" style="text-align:center">Nenhum registro encontrado.</td></tr>`}</tbody>
+                    <tbody>${linhasHTML || `<tr><td colspan="12" style="text-align:center">Nenhum registro encontrado.</td></tr>`}</tbody>
                 </table>
                 <div class="relatorio-print-rodape">${relatorioListaFiltrada.length} registro(s) · Carteira Produção · Fundição Moreno</div>
             `;
