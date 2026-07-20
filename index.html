@@ -1687,7 +1687,7 @@
                     <td><input type="text" id="filtro-col-pzentrega-camisa" class="table-filter-input" placeholder="ex: 07/2026"></td>`;
             } else if (tipoProduto==="PERIFÉRICOS") {
                 colspanRestante=4;
-                colunasHTML=`${thOrdenavel('PV','pv')}${thOrdenavel('Cliente','cliente')}${thOrdenavel('Cód.','peca')}${thOrdenavel('Seq.','seq')}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtd.','qtd',true)}${thOrdenavel('Prazo Fundido','pzFundidoObj')}${thOrdenavel('Prazo Entrega','pzEntregaObj')}${thOrdenavel('Des.','des',true)}${thOrdenavel('Status','statusUsinagem')}`;
+                colunasHTML=`${thOrdenavel('PV','pv')}${thOrdenavel('Cliente','cliente')}${thOrdenavel('OS/Peças','peca')}${thOrdenavel('Seq.','seq')}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtd.','qtd',true)}${thOrdenavel('Prazo Fundido','pzFundidoObj')}${thOrdenavel('Prazo Entrega','pzEntregaObj')}${thOrdenavel('Des.','des',true)}${thOrdenavel('Status','statusUsinagem')}`;
                 colunasFiltroHTML=`
                     <td><select id="filtro-col-pv" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-cliente" class="table-filter-select"></select></td>
@@ -1730,7 +1730,7 @@
                     <td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
             } else {
                 let adicionaisCol='', adicionaisFiltro='';
-                // Bagaceiras, Pentes e Rodetes Novos exibem OS/Peça e Item2 (colunas atuais da
+                // Bagaceiras, Pentes e Rodetes Novos exibem OS/Peças e Seq. (colunas atuais da
                 // planilha) e usam todas o mesmo "modo de exibição" do andamento: uma única
                 // coluna "Recursos" com as etapas OP1..OPn (igual às abas Camisa/Eixos).
                 const mostraPecaSeq = true;
@@ -1747,7 +1747,7 @@
                     adicionaisCol=`${thOrdenavel('DES.','des',true)}${thOrdenavel('Recursos','recursoCamisa')}${thOrdenavel('STATUS USINAGEM','statusUsinagem')}`;
                     adicionaisFiltro=`<td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td><td><input type="text" id="filtro-col-recurso-camisa" class="table-filter-input" placeholder="Buscar etapa..."></td><td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
                 }
-                colunasHTML=`${thOrdenavel('PV / OS','pv')}${thOrdenavel('Cliente','cliente')}${mostraPecaSeq?`${thOrdenavel('OS/Peça','peca')}${thOrdenavel('Item2','seq')}`:''}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtde.','qtd',true)}${thOrdenavel('Prazo Fundido','pzFundidoObj')}${thOrdenavel('Prazo Entrega','pzEntregaObj')}${adicionaisCol}`;
+                colunasHTML=`${thOrdenavel('PV / OS','pv')}${thOrdenavel('Cliente','cliente')}${mostraPecaSeq?`${thOrdenavel('OS/Peças','peca')}${thOrdenavel('Seq.','seq')}`:''}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtde.','qtd',true)}${thOrdenavel('Prazo Fundido','pzFundidoObj')}${thOrdenavel('Prazo Entrega','pzEntregaObj')}${adicionaisCol}`;
                 colunasFiltroHTML=`<td><select id="filtro-col-pv" class="table-filter-select"></select></td><td><select id="filtro-col-cliente" class="table-filter-select"></select></td>${mostraPecaSeq?`<td><select id="filtro-col-peca" class="table-filter-select"></select></td><td><select id="filtro-col-seq" class="table-filter-select"></select></td>`:''}<td><select id="filtro-col-desc" class="table-filter-select"></select></td><td><select id="filtro-col-qtd" class="table-filter-select"></select></td><td><input type="text" id="filtro-col-pzfundido" class="table-filter-input" placeholder="ex: 07/2026"></td><td><input type="text" id="filtro-col-pzentrega" class="table-filter-input" placeholder="ex: 07/2026"></td>${adicionaisFiltro}`;
             }
 
