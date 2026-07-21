@@ -924,7 +924,7 @@
             </div>
             <div id="drawer-sub-engenharia" style="display:none">
                 <div class="drawer-section-label">Engenharia</div>
-                <div class="drawer-nav-item sub disabled">Módulos em breve</div>
+                <div class="drawer-nav-item sub" onclick="drawerSelecionarAba('PROGRAMACAO')">Programação</div>
             </div>
             <div id="drawer-sub-vendas" style="display:none">
                 <div class="drawer-section-label">Vendas Industriais</div>
@@ -1003,7 +1003,7 @@
             <li><a class="sub-tab menu-item" data-tipo="REFORMA DIVERSAS">Reforma Diversas</a></li>
         </ul>
         <ul id="sub-engenharia" class="sub-tabs-group">
-            <li><span class="sub-tab" style="color:var(--text-3); cursor:not-allowed;">Módulos de Engenharia (Em Breve)</span></li>
+            <li><a class="sub-tab menu-item" data-tipo="PROGRAMACAO">Programação</a></li>
         </ul>
         <ul id="sub-vendas" class="sub-tabs-group">
             <li><a class="sub-tab menu-item" data-tipo="VI DIVERSOS">Carteira Diversos</a></li>
@@ -1062,6 +1062,10 @@
         // Índice da aba EIXOS por "Nº Eixo" (texto normalizado) -> {statusUsinagem, observacao, etapas...}
         // Usado pelo modal "Andamento do Eixo", aberto ao clicar no Nº Eixo dentro da tabela CAMISA.
         let eixosPorNumero = {};
+        // Engenharia · Programação: lista de itens com "Des." = AG/AG. (aguardando desenho),
+        // reunidos a partir de todas as tabelas de Açúcar e Álcool.
+        let programacaoListaOriginal = [];
+        let programacaoOrdenacao = { campo: null, dir: 1 };
 
         // --- RELÓGIO ---
         function atualizarRelogio() {
@@ -1449,6 +1453,8 @@
                     construirTelaVIDiversos();
                 } else if (tipo === 'MANGANES') {
                     construirTelaManganes();
+                } else if (tipo === 'PROGRAMACAO') {
+                    construirTelaProgramacao();
                 } else {
                     construirTelaPersonalizada(tipo);
                 }
@@ -2940,6 +2946,245 @@
                     <td style="color:${!usinAcbEmpty&&refIsLate?'#ef4444':r.isFinalizada?'#10b981':'var(--text-2)'};font-weight:${r.isFinalizada?'500':'400'}">${r.usinRealAcb||'—'}</td>
                     <td>${statusBadge}</td>
                     <td>${recursoHTML}</td>
+                    <td class="centralized-status">${obsHTML}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- ENGENHARIA · PROGRAMAÇÃO ---
+        // Reúne, de todas as tabelas de Açúcar e Álcool (Bagaceiras, Pentes, Rodetes Novos,
+        // Periféricos, Camisas, Eixos e Reforma Diversas), apenas os itens cuja coluna
+        // "Des." esteja marcada como "AG" ou "AG." (aguardando desenho / aguardando
+        // desenvolvimento de engenharia), exibindo-os em uma única tabela com todos os
+        // parâmetros de referência de cada item.
+        function construirTelaProgramacao() {
+            nomeAbaAtiva = 'PROGRAMACAO';
+            document.getElementById('statusbar-modulo').textContent = 'Engenharia · Programação';
+            const areaDestino = document.getElementById('custom-dashboard-area');
+            areaDestino.innerHTML = '';
+
+            const origens = [
+                { chave: 'BAGACEIRAS',       label: 'Bagaceiras' },
+                { chave: 'PENTES',           label: 'Pentes' },
+                { chave: 'RODETES NOVOS',    label: 'Rodetes Novos' },
+                { chave: 'PERIFÉRICOS',      label: 'Periféricos' },
+                { chave: 'CAMISAS',          label: 'Camisas' },
+                { chave: 'EIXOS',            label: 'Eixos' },
+                { chave: 'REFORMA DIVERSAS', label: 'Reforma Diversas' },
+            ];
+
+            programacaoListaOriginal = [];
+
+            origens.forEach(o => {
+                const linhas = abasPlanilha[normalizarTextoParaFiltro(o.chave)] || [];
+                linhas.forEach(linha => {
+                    const pv        = String(buscarValor(linha,'PV')||'').trim();
+                    const cliente   = String(buscarValor(linha,'Cliente')||'').trim();
+                    const descricao = String(buscarValor(linha,'Descrição')||buscarValor(linha,'Descricao')||'').trim();
+
+                    if (pv.toUpperCase()==='PV') return; // linha de cabeçalho residual
+                    if (!pv && !cliente && !descricao) return;
+
+                    // Coluna "Des." (Desenho de Engenharia): só interessam os itens AG / AG.
+                    const desRaw  = String(buscarValor(linha,'Des')||'').trim();
+                    const desNorm = desRaw.toUpperCase().replace(/\.+$/,'');
+                    if (desNorm !== 'AG') return;
+
+                    const peca   = String(buscarValor(linha,'OS/Peças')||buscarValor(linha,'OS/Peça')||buscarValor(linha,'O.S./Peça')||buscarValor(linha,'O.S./Peca')||'').trim();
+                    const seq    = String(buscarValor(linha,'Seq')||buscarValor(linha,'Seq.')||'').trim();
+                    const qtd    = parseInt(buscarValor(linha,'Qtde')||buscarValor(linha,'Qtd')||buscarValor(linha,'Qtde.')||1)||1;
+                    const pzFundidoCru = buscarValor(linha,'Prazo Fund')||buscarValor(linha,'Prazo Fundido')||buscarValor(linha,'Data Prev. Fundido')||'';
+                    const pzEntregaCru = buscarValor(linha,'Prazo Entrega')||buscarValor(linha,'Data Prev. Entrega')||buscarValor(linha,'Prazo\nEntrega\nEixo')||buscarValor(linha,'Prazo\nEntrega\nCamisa')||'';
+                    const statusCru    = buscarValor(linha,'Status Usinagem')||buscarValor(linha,'Status Us.')||buscarValor(linha,'Status')||buscarValor(linha,'Status\nCamisa')||'';
+                    const obs = String(buscarValor(linha,'Observação')||buscarValor(linha,'Obs')||buscarValor(linha,'Observacao')||'').trim();
+
+                    const pzFundidoInfo = formatarDataExcel(pzFundidoCru);
+                    const pzEntregaInfo = formatarDataExcel(pzEntregaCru);
+
+                    programacaoListaOriginal.push({
+                        origem: o.label, pv, cliente, peca, seq, descricao, qtd,
+                        pzFundidoStr: pzFundidoInfo.stringLegivel, pzFundidoObj: pzFundidoInfo.dataObjeto,
+                        prazoEntregaStr: pzEntregaInfo.stringLegivel, prazoEntregaObj: pzEntregaInfo.dataObjeto,
+                        status: String(statusCru).trim(), obs, des: desRaw
+                    });
+                });
+            });
+
+            // Ordena por Prazo de Entrega (mais urgente primeiro) e depois por Cliente
+            programacaoListaOriginal.sort((a,b) => {
+                const da=a.prazoEntregaObj, db=b.prazoEntregaObj;
+                if (da && !db) return -1; if (!da && db) return 1;
+                if (da && db && da.getTime()!==db.getTime()) return da-db;
+                return a.cliente.toLowerCase().localeCompare(b.cliente.toLowerCase());
+            });
+
+            programacaoOrdenacao = { campo: null, dir: 1 };
+
+            areaDestino.innerHTML = `
+                <div class="section-header">
+                    <div class="section-header-line"></div>
+                    <h3>Engenharia · Programação</h3>
+                </div>
+
+                <section class="cards-grid-6" style="grid-template-columns:repeat(1,minmax(0,220px))">
+                    <div class="status-card total selected">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--card-color)"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="1"/></svg>
+                        </div>
+                        <div class="card-meta"><div class="card-title">Aguardando Desenho</div><div class="card-value" id="prog-card-total">${programacaoListaOriginal.length}</div></div>
+                    </div>
+                </section>
+
+                <div class="table-card">
+                    <div class="table-title-area">
+                        <div class="table-title-text">Itens AG. Desenho — Açúcar e Álcool</div>
+                        <div id="prog-record-count" class="table-record-count">${programacaoListaOriginal.length} itens</div>
+                    </div>
+                    <div class="scroll-hint-mobile" id="scroll-hint-prog">↔ Arraste a tabela para o lado para ver mais colunas</div>
+                    <div class="table-wrapper" id="table-wrapper-prog">
+                        <table class="data-table" id="tbl-prog">
+                            <thead>
+                                <tr>
+                                    <th>Tabela</th>
+                                    ${thOrdenavel('PV','pv')}
+                                    ${thOrdenavel('Cliente','cliente')}
+                                    <th>OS/Peça</th>
+                                    <th>Seq.</th>
+                                    ${thOrdenavel('Descrição','descricao')}
+                                    <th style="text-align:center">Qtde.</th>
+                                    ${thOrdenavel('Prazo Fundido','pzFundidoObj')}
+                                    ${thOrdenavel('Prazo Entrega','prazoEntregaObj')}
+                                    <th class="centralized-status">Des.</th>
+                                    <th>Status</th>
+                                    <th>Obs.</th>
+                                </tr>
+                                <tr class="filter-row">
+                                    <td><select id="prog-f-origem" class="table-filter-select"></select></td>
+                                    <td><select id="prog-f-pv" class="table-filter-select"></select></td>
+                                    <td><select id="prog-f-cliente" class="table-filter-select"></select></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td><input type="text" id="prog-f-desc" class="table-filter-input" placeholder="Buscar..."></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td><select id="prog-f-status" class="table-filter-select"></select></td>
+                                    <td></td>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-prog"></tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            const populateSelect = (id, values) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const uniq = [...new Set(values.filter(v=>v&&String(v).trim()!==''))].sort((a,b)=>String(a).localeCompare(String(b)));
+                el.innerHTML = '<option value="">Todos</option>';
+                uniq.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = normalizarTextoParaFiltro(String(v));
+                    opt.textContent = v;
+                    el.appendChild(opt);
+                });
+            };
+            populateSelect('prog-f-origem',  programacaoListaOriginal.map(r=>r.origem));
+            populateSelect('prog-f-pv',      programacaoListaOriginal.map(r=>r.pv));
+            populateSelect('prog-f-cliente', programacaoListaOriginal.map(r=>r.cliente));
+            populateSelect('prog-f-status',  programacaoListaOriginal.map(r=>r.status));
+
+            document.querySelectorAll('#tbl-prog .table-filter-select, #tbl-prog .table-filter-input').forEach(el => {
+                el.addEventListener('change', programacaoRenderizar);
+                el.addEventListener('input', programacaoRenderizar);
+            });
+
+            programacaoRenderizar();
+            ativarAvisoScrollMobile('table-wrapper-prog', 'scroll-hint-prog');
+        }
+
+        function programacaoOrdenar(campo, thEl) {
+            if (programacaoOrdenacao.campo === campo) {
+                programacaoOrdenacao.dir *= -1;
+            } else {
+                programacaoOrdenacao = { campo, dir: 1 };
+            }
+            document.querySelectorAll('#tbl-prog .th-sort').forEach(th => {
+                th.classList.remove('sort-active');
+                th.querySelector('.sort-arrow').textContent = '';
+            });
+            thEl.classList.add('sort-active');
+            thEl.querySelector('.sort-arrow').textContent = programacaoOrdenacao.dir === 1 ? '▲' : '▼';
+            programacaoRenderizar();
+        }
+
+        function programacaoRenderizar() {
+            const tbody = document.getElementById('tbody-prog');
+            if (!tbody) return;
+
+            const fOrigem  = document.getElementById('prog-f-origem')?.value||'';
+            const fPv      = document.getElementById('prog-f-pv')?.value||'';
+            const fCliente = document.getElementById('prog-f-cliente')?.value||'';
+            const fDesc    = normalizarTextoParaFiltro(document.getElementById('prog-f-desc')?.value||'');
+            const fStatus  = document.getElementById('prog-f-status')?.value||'';
+
+            let lista = programacaoListaOriginal.filter(r => {
+                if (fOrigem  && normalizarTextoParaFiltro(r.origem)  !== fOrigem)  return false;
+                if (fPv      && normalizarTextoParaFiltro(r.pv)      !== fPv)      return false;
+                if (fCliente && normalizarTextoParaFiltro(r.cliente) !== fCliente) return false;
+                if (fStatus  && normalizarTextoParaFiltro(r.status)  !== fStatus)  return false;
+                if (fDesc    && !normalizarTextoParaFiltro(r.descricao).includes(fDesc)) return false;
+                return true;
+            });
+
+            if (programacaoOrdenacao.campo) {
+                const campo = programacaoOrdenacao.campo, dir = programacaoOrdenacao.dir;
+                lista = [...lista].sort((a,b) => {
+                    const va = a[campo], vb = b[campo];
+                    if (campo === 'pzFundidoObj' || campo === 'prazoEntregaObj') {
+                        if (!va && !vb) return 0;
+                        if (!va) return 1;
+                        if (!vb) return -1;
+                        return (new Date(va) - new Date(vb)) * dir;
+                    }
+                    const sa = String(va||'').toLowerCase(), sb = String(vb||'').toLowerCase();
+                    if (sa < sb) return -1*dir;
+                    if (sa > sb) return 1*dir;
+                    return 0;
+                });
+            }
+
+            document.getElementById('prog-record-count').textContent = `${lista.length} ${lista.length===1?'item':'itens'}`;
+            document.getElementById('prog-card-total').textContent = programacaoListaOriginal.length;
+
+            tbody.innerHTML = '';
+            if (lista.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum item aguardando desenho encontrado.</td></tr>`;
+                return;
+            }
+
+            lista.forEach(r => {
+                const tr = document.createElement('tr');
+                let obsHTML = '<span style="color:var(--text-3)">—</span>';
+                if (r.obs && r.obs!=='undefined' && r.obs!=='0' && r.obs!=='nan') {
+                    const txt = r.obs.replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/\n/g,' ');
+                    obsHTML = `<button class="btn-obs-trigger" onclick="abrirModalObservacao('${txt}')" title="Ver nota">💬</button>`;
+                }
+                tr.innerHTML = `
+                    <td><span class="badge-status-usinagem">${r.origem}</span></td>
+                    <td><b style="color:var(--text-1)">${r.pv||'—'}</b></td>
+                    <td>${r.cliente||'—'}</td>
+                    <td style="color:var(--text-2)">${r.peca||'—'}</td>
+                    <td style="color:var(--text-2)">${r.seq||'—'}</td>
+                    <td style="color:var(--text-2)">${r.descricao||'—'}</td>
+                    <td style="text-align:center;font-weight:600;color:var(--accent)">${r.qtd}</td>
+                    <td style="color:var(--text-2)">${r.pzFundidoStr||'—'}</td>
+                    <td style="color:var(--text-2)">${r.prazoEntregaStr||'—'}</td>
+                    <td class="centralized-status">${formatarStatusComIcone(r.des)}</td>
+                    <td><span class="badge-status-usinagem">${r.status||'—'}</span></td>
                     <td class="centralized-status">${obsHTML}</td>
                 `;
                 tbody.appendChild(tr);
