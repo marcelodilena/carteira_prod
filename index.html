@@ -1208,7 +1208,7 @@
             }
 
             // Açúcar e Álcool abre direto na Carteira Geral / Vendas Industriais abre direto na Carteira Diversos
-            const autoAbrirPorAba = { 'acucar': 'CARTEIRA GERAL', 'vendas': 'VI DIVERSOS' };
+            const autoAbrirPorAba = { 'acucar': 'CARTEIRA GERAL', 'vendas': 'VI DIVERSOS', 'engenharia': 'PROGRAMACAO' };
             if (autoAbrirPorAba[tabId] && Object.keys(abasPlanilha).length > 0) {
                 const linkAuto = document.querySelector(`[data-tipo="${autoAbrirPorAba[tabId]}"]`);
                 if (linkAuto) {
