@@ -2594,19 +2594,6 @@
         function construirTelaVIDiversos() {
             nomeAbaAtiva = 'VI DIVERSOS';
 
-            // Calcula se uma data prevista está em atraso (comparando com a data real, ou com hoje se ainda não realizada)
-            // e quantos dias de atraso já se passaram.
-            function calcularDiasAtraso(prevObj, realObj, hoje) {
-                if (!prevObj) return { atrasado: false, dias: 0 };
-                const pz = new Date(prevObj); pz.setHours(0,0,0,0);
-                const ref = realObj ? new Date(realObj) : hoje;
-                ref.setHours(0,0,0,0);
-                if (ref > pz) {
-                    return { atrasado: true, dias: Math.round((ref - pz) / 86400000) };
-                }
-                return { atrasado: false, dias: 0 };
-            }
-
             document.getElementById('statusbar-modulo').textContent = 'Carteira Diversos';
             const areaDestino = document.getElementById('custom-dashboard-area');
             areaDestino.innerHTML = '';
@@ -2619,7 +2606,7 @@
 
             const hoje = new Date(); hoje.setHours(0,0,0,0);
             diversosListaOriginal = [];
-            let total = 0, finalizadas = 0, atrasos = 0, expedidos = 0;
+            let total = 0, atrasos = 0, liberadas = 0;
 
             rawData.forEach(linha => {
                 const os          = String(buscarValor(linha,'O.S.')||buscarValor(linha,'OS')||'').trim();
@@ -2628,102 +2615,47 @@
                 const peca        = String(buscarValor(linha,'Peça')||buscarValor(linha,'Peca')||'').trim();
                 const descricao   = String(buscarValor(linha,'Descrição')||buscarValor(linha,'Descricao')||'').trim();
                 const qtd         = parseInt(buscarValor(linha,'Qtde')||buscarValor(linha,'Qtd')||1)||1;
-                const statusUs    = String(buscarValor(linha,'Status\nUsinagem')||buscarValor(linha,'StatusUsinagem')||buscarValor(linha,'Status Usinagem')||'').trim();
-                const recurso     = String(buscarValor(linha,'Recurso\nOrçado')||buscarValor(linha,'RecursoOrçado')||buscarValor(linha,'Recurso Orçado')||'').trim();
+                const tipo        = String(buscarValor(linha,'Tipo')||'').trim();
+                const statusUs    = String(buscarValor(linha,'Status Usinagem')||buscarValor(linha,'StatusUsinagem')||'').trim();
+                const recurso     = String(buscarValor(linha,'Recurso Orçado')||buscarValor(linha,'RecursoOrçado')||'').trim();
                 const obs         = String(buscarValor(linha,'Observação')||buscarValor(linha,'Observacao')||'').trim();
 
-                const prazoContratualRaw = buscarValor(linha,'Prazo \nContratual')||buscarValor(linha,'PrazoContratual')||buscarValor(linha,'Prazo Contratual')||buscarValor(linha,'Prazo\nContratual')||'';
-                const fundPrevDsbRaw = buscarValor(linha,'Fund. Prev.\n(Desbaste)')||buscarValor(linha,'FundPrevDesbaste')||'';
-                const fundRealDsbRaw = buscarValor(linha,'Fund. Real\n(Desbaste)')||buscarValor(linha,'FundRealDesbaste')||'';
-                const usinPrevDsbRaw = buscarValor(linha,'Usin. Prev.\n(Desbaste)')||buscarValor(linha,'UsinPrevDesbaste')||'';
-                const usinRealDsbRaw = buscarValor(linha,'Usin. Real\n(Desbaste)')||buscarValor(linha,'UsinRealDesbaste')||'';
-                const fundPrevAcbRaw = buscarValor(linha,'Fund. Prev.\n(Acabamento)')||buscarValor(linha,'FundPrevAcabamento')||'';
-                const fundRealAcbRaw = buscarValor(linha,'Fund. Real\n(Acabamento)')||buscarValor(linha,'FundRealAcabamento')||'';
-                const usinPrevAcbRaw = buscarValor(linha,'Usin. Prev.\n(Acabamento)')||buscarValor(linha,'UsinPrevAcabamento')||'';
-                const usinRealAcbRaw = buscarValor(linha,'Usin. Real\n(Acabamento)')||buscarValor(linha,'UsinRealAcabamento')||'';
+                const prazoContratualRaw = buscarValor(linha,'Prazo Contratual')||'';
+                const fundPrevRaw        = buscarValor(linha,'Fund. Prev.')||buscarValor(linha,'FundPrev')||'';
+                const usinPrevRaw        = buscarValor(linha,'Usin. Prev.')||buscarValor(linha,'UsinPrev')||'';
 
                 if (!os && !cliente && !descricao) return;
 
-                const prazoContraInfo  = formatarDataExcel(prazoContratualRaw);
-                const fundPrevDsbInfo  = formatarDataExcel(fundPrevDsbRaw);
-                const fundRealDsbInfo  = formatarDataExcel(fundRealDsbRaw);
-                const usinPrevDsbInfo  = formatarDataExcel(usinPrevDsbRaw);
-                const usinRealDsbInfo  = formatarDataExcel(usinRealDsbRaw);
-                const fundPrevAcbInfo  = formatarDataExcel(fundPrevAcbRaw);
-                const fundRealAcbInfo  = formatarDataExcel(fundRealAcbRaw);
-                const usinPrevAcbInfo  = formatarDataExcel(usinPrevAcbRaw);
-                const usinRealAcbInfo  = formatarDataExcel(usinRealAcbRaw);
+                const prazoContraInfo = formatarDataExcel(prazoContratualRaw);
+                const fundPrevInfo    = formatarDataExcel(fundPrevRaw);
+                const usinPrevInfo    = formatarDataExcel(usinPrevRaw);
 
-                // Determine if FINALIZADA: usinRealAcb preenchido
-                const usinRealAcbStr = String(usinRealAcbRaw).trim();
-                const temAcabamento  = usinRealAcbStr && usinRealAcbStr !== '-' && usinRealAcbStr !== '';
-                const isFinalizada   = temAcabamento && usinRealAcbInfo.dataObjeto;
+                const statusNorm  = normalizarTextoParaFiltro(statusUs);
+                const isConcluido = ['CONCLUIDO','CONCLUÍDO'].includes(statusNorm);
 
-                // Item Expedido: fica fora da listagem/card "Total" por padrão, só aparece em "Liberadas"
-                const isExpedido = ['EXPEDIDO','EXPEDIDOS'].includes(normalizarTextoParaFiltro(statusUs));
-                // Item Concluído: não deve ser considerado na aba de Atrasos
-                const isConcluido = ['CONCLUIDO','CONCLUÍDO'].includes(normalizarTextoParaFiltro(statusUs));
-
-                // Determine ATRASO: 
-                // If Usin.Real Acabamento == '-', analyse Usin.Real (Desbaste) vs Prazo Contratual
-                // Else analyse Usin.Real Acabamento vs Prazo Contratual
+                // Atraso: prazo contratual já vencido e o item ainda não está concluído
+                // (baseado no Status Usinagem), independente de qualquer outra data.
                 let isAtrasado = false;
                 const prazoObj = prazoContraInfo.dataObjeto;
-                if (prazoObj && !isExpedido && !isConcluido) {
+                if (prazoObj && !isConcluido) {
                     const pz = new Date(prazoObj); pz.setHours(0,0,0,0);
-                    if (!temAcabamento) {
-                        // check desbaste
-                        const usinRealDsbStr = String(usinRealDsbRaw).trim();
-                        const temDesb = usinRealDsbStr && usinRealDsbStr !== '-';
-                        if (temDesb && usinRealDsbInfo.dataObjeto) {
-                            const rD = new Date(usinRealDsbInfo.dataObjeto); rD.setHours(0,0,0,0);
-                            if (rD > pz) isAtrasado = true;
-                        } else {
-                            // not done yet - check if today past deadline
-                            if (hoje > pz) isAtrasado = true;
-                        }
-                    } else {
-                        const rA = new Date(usinRealAcbInfo.dataObjeto); rA.setHours(0,0,0,0);
-                        if (rA > pz) isAtrasado = true;
-                    }
+                    if (hoje > pz) isAtrasado = true;
                 }
 
-                // Atraso específico de cada etapa de FUNDIÇÃO PREVISTA (Desbaste e Acabamento):
-                // compara a data prevista com a data real da mesma etapa; se ainda não realizada, compara com hoje.
-                const fundRealDsbStr = String(fundRealDsbRaw).trim();
-                const temFundRealDsb = fundRealDsbStr && fundRealDsbStr !== '-' && fundRealDsbStr !== '';
-                const atrasoDsb = calcularDiasAtraso(fundPrevDsbInfo.dataObjeto, temFundRealDsb ? fundRealDsbInfo.dataObjeto : null, hoje);
-
-                const fundRealAcbStr = String(fundRealAcbRaw).trim();
-                const temFundRealAcb = fundRealAcbStr && fundRealAcbStr !== '-' && fundRealAcbStr !== '';
-                const atrasoAcb = calcularDiasAtraso(fundPrevAcbInfo.dataObjeto, temFundRealAcb ? fundRealAcbInfo.dataObjeto : null, hoje);
-
-                if (!isExpedido) {
-                    total++;
-                    if (isFinalizada) finalizadas++;
-                    if (isAtrasado) atrasos++;
-                } else {
-                    expedidos++;
-                }
+                total++;
+                if (isAtrasado) atrasos++;
+                if (isConcluido) liberadas++;
 
                 diversosListaOriginal.push({
-                    os, item, cliente, peca, descricao, qtd, statusUs, recurso, obs,
+                    os, item, cliente, peca, descricao, qtd, tipo, statusUs, recurso, obs,
                     prazoContraStr: prazoContraInfo.stringLegivel, prazoContraObj: prazoContraInfo.dataObjeto,
-                    fundPrevDsb: fundPrevDsbInfo.stringLegivel, fundPrevDsbObj: fundPrevDsbInfo.dataObjeto,
-                    fundRealDsb: fundRealDsbInfo.stringLegivel,
-                    usinPrevDsb: usinPrevDsbInfo.stringLegivel,
-                    usinRealDsb: usinRealDsbInfo.stringLegivel,
-                    fundPrevAcb: fundPrevAcbInfo.stringLegivel, fundPrevAcbObj: fundPrevAcbInfo.dataObjeto,
-                    fundRealAcb: fundRealAcbInfo.stringLegivel,
-                    usinPrevAcb: usinPrevAcbInfo.stringLegivel,
-                    usinRealAcb: usinRealAcbInfo.stringLegivel,
-                    isFinalizada, isAtrasado, isExpedido,
-                    atrasoFundDsb: atrasoDsb.atrasado, diasAtrasoFundDsb: atrasoDsb.dias,
-                    atrasoFundAcb: atrasoAcb.atrasado, diasAtrasoFundAcb: atrasoAcb.dias
+                    fundPrevStr: fundPrevInfo.stringLegivel, fundPrevObj: fundPrevInfo.dataObjeto,
+                    usinPrevStr: usinPrevInfo.stringLegivel, usinPrevObj: usinPrevInfo.dataObjeto,
+                    isConcluido, isAtrasado
                 });
             });
 
-            // Sort: Prazo Contratual → Cliente → Descrição
+            // Ordenação padrão: Prazo Contratual → Cliente → Descrição
             diversosListaOriginal.sort((a,b) => {
                 const da = a.prazoContraObj, db = b.prazoContraObj;
                 if (da && !db) return -1; if (!da && db) return 1;
@@ -2758,7 +2690,7 @@
                         <div class="card-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--card-color)"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
                         </div>
-                        <div class="card-meta"><div class="card-title">Liberadas</div><div class="card-value" id="div-card-lib">${expedidos}</div></div>
+                        <div class="card-meta"><div class="card-title">Liberadas</div><div class="card-value" id="div-card-lib">${liberadas}</div></div>
                     </div>
                 </section>
 
@@ -2773,44 +2705,41 @@
                             <thead>
                                 <tr>
                                     <th>O.S.</th>
+                                    <th>Item</th>
                                     <th>Cliente</th>
                                     <th>Peça</th>
                                     <th>Descrição</th>
                                     <th style="text-align:center">Qtd.</th>
+                                    <th>Tipo</th>
+                                    <th class="th-sort" data-sort="fundPrevObj" onclick="diversosOrdenar('fundPrevObj', this)">Prazo Fund. Prev. <span class="sort-arrow"></span></th>
+                                    <th class="th-sort" data-sort="usinPrevObj" onclick="diversosOrdenar('usinPrevObj', this)">Prazo Usin. Prev. <span class="sort-arrow"></span></th>
                                     <th class="th-sort" data-sort="prazoContraObj" onclick="diversosOrdenar('prazoContraObj', this)">Prazo Contratual <span class="sort-arrow"></span></th>
-                                    <th class="th-sort" data-sort="fundPrevDsbObj" onclick="diversosOrdenar('fundPrevDsbObj', this)">Fund.Prev. Desb. <span class="sort-arrow"></span></th>
-                                    <th class="th-sort" style="text-align:center" data-sort="diasAtrasoFundDsb" onclick="diversosOrdenar('diasAtrasoFundDsb', this)">Dias Atraso <span class="sort-arrow"></span></th>
-                                    <th>Fund.Real Desb.</th>
-                                    <th>Usin.Prev. Desb.</th>
-                                    <th>Usin.Real Desb.</th>
-                                    <th class="th-sort" data-sort="fundPrevAcbObj" onclick="diversosOrdenar('fundPrevAcbObj', this)">Fund. Prev. Acab. <span class="sort-arrow"></span></th>
-                                    <th class="th-sort" style="text-align:center" data-sort="diasAtrasoFundAcb" onclick="diversosOrdenar('diasAtrasoFundAcb', this)">Dias Atraso <span class="sort-arrow"></span></th>
-                                    <th>Fund. Real Acab.</th>
-                                    <th>Usin.Prev. Acab.</th>
-                                    <th>Usin.Real Acab.</th>
-                                    <th>Status Usin.</th>
                                     <th>Recurso Orçado</th>
+                                    <th>Status Usinagem</th>
                                     <th>Obs.</th>
                                 </tr>
                                 <tr class="filter-row">
                                     <td><select id="df-os" class="table-filter-select"></select></td>
+                                    <td><select id="df-item" class="table-filter-select"></select></td>
                                     <td><select id="df-cli" class="table-filter-select"></select></td>
                                     <td><select id="df-peca" class="table-filter-select"></select></td>
                                     <td><select id="df-desc" class="table-filter-select"></select></td>
                                     <td></td>
-                                    <td><select id="df-prazo" class="table-filter-select"></select></td>
-                                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                                    <td><select id="df-status" class="table-filter-select"></select></td>
+                                    <td><select id="df-tipo" class="table-filter-select"></select></td>
                                     <td></td>
+                                    <td></td>
+                                    <td><select id="df-prazo" class="table-filter-select"></select></td>
+                                    <td></td>
+                                    <td><select id="df-status" class="table-filter-select"></select></td>
                                     <td><input type="text" id="df-obs" class="table-filter-input" placeholder="Buscar..."></td>
                                 </tr>
                             </thead>
                             <tbody id="tbody-diversos"></tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="4" style="text-align:right;color:var(--text-2)">SOMA TOTAL DAS PEÇAS:</td>
+                                    <td colspan="5" style="text-align:right;color:var(--text-2)">SOMA TOTAL DAS PEÇAS:</td>
                                     <td id="df-soma" style="text-align:center;color:var(--accent);font-size:1rem;font-weight:700">0</td>
-                                    <td colspan="14"></td>
+                                    <td colspan="7"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -2818,7 +2747,7 @@
                 </div>
             `;
 
-            // Populate filter dropdowns
+            // Popula os dropdowns de filtro
             const populateSelect = (id, values) => {
                 const el = document.getElementById(id);
                 if (!el) return;
@@ -2832,11 +2761,13 @@
                 });
             };
             populateSelect('df-os',     diversosListaOriginal.map(r=>r.os));
+            populateSelect('df-item',   diversosListaOriginal.map(r=>r.item));
             populateSelect('df-cli',    diversosListaOriginal.map(r=>r.cliente));
             populateSelect('df-peca',   diversosListaOriginal.map(r=>r.peca));
             populateSelect('df-desc',   diversosListaOriginal.map(r=>r.descricao));
+            populateSelect('df-tipo',   diversosListaOriginal.map(r=>r.tipo));
             populateSelect('df-prazo',  diversosListaOriginal.map(r=>r.prazoContraStr));
-            populateSelect('df-status', diversosListaOriginal.filter(r=>!r.isExpedido).map(r=>r.statusUs));
+            populateSelect('df-status', diversosListaOriginal.map(r=>r.statusUs));
 
             document.querySelectorAll('#tbl-diversos .table-filter-select, #tbl-diversos .table-filter-input').forEach(el => {
                 el.addEventListener('change', diversosRenderizar);
@@ -2851,7 +2782,7 @@
             document.querySelectorAll('#custom-dashboard-area .status-card').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
             diversosFiltroAba = aba;
-            const titulos = { total:'Todos os Registros', atrasos:'Itens em Atraso', liberadas:'Itens Liberados (Finalizados)' };
+            const titulos = { total:'Todos os Registros', atrasos:'Itens em Atraso', liberadas:'Itens Liberados (Concluídos)' };
             document.getElementById('div-table-title').textContent = titulos[aba] || 'Todos';
             diversosRenderizar();
         }
@@ -2876,22 +2807,24 @@
             if (!tbody) return;
 
             const fOs     = document.getElementById('df-os')?.value||'';
+            const fItem   = document.getElementById('df-item')?.value||'';
             const fCli    = document.getElementById('df-cli')?.value||'';
             const fPeca   = document.getElementById('df-peca')?.value||'';
             const fDesc   = document.getElementById('df-desc')?.value||'';
+            const fTipo   = document.getElementById('df-tipo')?.value||'';
             const fPrazo  = document.getElementById('df-prazo')?.value||'';
             const fStatus = document.getElementById('df-status')?.value||'';
             const fObs    = normalizarTextoParaFiltro(document.getElementById('df-obs')?.value||'');
 
             let lista = diversosListaOriginal.filter(r => {
-                // Itens Expedidos ficam ocultos do Total/Finalizadas/Atrasos — só aparecem em "Liberadas"
-                if (diversosFiltroAba === 'liberadas') { if (!r.isExpedido) return false; }
-                else if (r.isExpedido) return false;
-                if (diversosFiltroAba === 'atrasos'     && !r.isAtrasado)   return false;
+                if (diversosFiltroAba === 'atrasos'    && !r.isAtrasado)   return false;
+                if (diversosFiltroAba === 'liberadas'  && !r.isConcluido) return false;
                 if (fOs    && normalizarTextoParaFiltro(r.os)        !== fOs)    return false;
+                if (fItem  && normalizarTextoParaFiltro(r.item)      !== fItem)  return false;
                 if (fCli   && normalizarTextoParaFiltro(r.cliente)   !== fCli)   return false;
                 if (fPeca  && normalizarTextoParaFiltro(r.peca)      !== fPeca)  return false;
                 if (fDesc  && normalizarTextoParaFiltro(r.descricao) !== fDesc)  return false;
+                if (fTipo  && normalizarTextoParaFiltro(r.tipo)      !== fTipo)  return false;
                 if (fPrazo && normalizarTextoParaFiltro(r.prazoContraStr) !== fPrazo) return false;
                 if (fStatus&& normalizarTextoParaFiltro(r.statusUs)  !== fStatus)return false;
                 if (fObs   && !normalizarTextoParaFiltro(r.obs).includes(fObs))  return false;
@@ -2916,29 +2849,16 @@
 
             tbody.innerHTML = '';
             if (lista.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="19" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro encontrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro encontrado.</td></tr>`;
                 return;
             }
 
             lista.forEach(r => {
                 const tr = document.createElement('tr');
-                if (r.isFinalizada || r.isExpedido) tr.classList.add('row-finalizada');
-                if (r.isAtrasado)   tr.classList.add('row-atrasada');
+                if (r.isConcluido) tr.classList.add('row-finalizada');
+                if (r.isAtrasado)  tr.classList.add('row-atrasada');
 
-                // Recurso orçado: render as colored badges for each code
                 const recursoHTML = renderRecursoOrcado(r.recurso);
-
-                // Date cells: highlight if finalizada (strikethrough visual replaced by green check)
-                const dataCell = (str, isFin) => {
-                    if (!str || str==='-' || str==='') return `<span style="color:var(--text-3)">—</span>`;
-                    if (isFin) return `<span style="color:#10b981;font-weight:500">✔ ${str}</span>`;
-                    return `<span>${str}</span>`;
-                };
-
-                // Determine which date is "reference" for atraso coloring
-                const usinAcbEmpty = !r.usinRealAcb || r.usinRealAcb==='-' || r.usinRealAcb==='';
-                const refDateStr   = usinAcbEmpty ? r.usinRealDsb : r.usinRealAcb;
-                const refIsLate    = r.isAtrasado;
 
                 let obsHTML = '';
                 if (r.obs && r.obs!=='undefined' && r.obs!=='0' && r.obs!=='nan') {
@@ -2946,36 +2866,31 @@
                     obsHTML = `<button class="btn-obs-trigger" onclick="abrirModalObservacao('${txt}')" title="Ver nota">💬</button>`;
                 }
 
-                const statusBadge = (r.isFinalizada || r.isExpedido)
-                    ? `<span class="badge-status-usinagem" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3)">✔ Finalizado</span>`
+                const statusBadge = r.isConcluido
+                    ? `<span class="badge-status-usinagem" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3)">✔ ${r.statusUs||'Concluído'}</span>`
                     : `<span class="badge-status-usinagem">${r.statusUs||'—'}</span>`;
 
                 tr.innerHTML = `
                     <td><b style="color:var(--text-1)">${r.os||'—'}</b></td>
+                    <td style="color:var(--text-2)">${r.item||'—'}</td>
                     <td>${r.cliente||'—'}</td>
                     <td style="color:var(--text-2)">${r.peca||'—'}</td>
                     <td style="color:var(--text-2)">${r.descricao||'—'}</td>
                     <td style="text-align:center;font-weight:600;color:var(--accent)">${r.qtd}</td>
+                    <td style="color:var(--text-2)">${r.tipo||'—'}</td>
+                    <td style="color:var(--text-2)">${r.fundPrevStr||'—'}</td>
+                    <td style="color:var(--text-2)">${r.usinPrevStr||'—'}</td>
                     <td style="color:${r.isAtrasado?'#ef4444':'var(--text-1)'};font-weight:${r.isAtrasado?'600':'400'}">${r.prazoContraStr||'—'}</td>
-                    <td style="color:${r.atrasoFundDsb?'#ef4444':'var(--text-2)'};font-weight:${r.atrasoFundDsb?'700':'400'}">${r.fundPrevDsb||'—'}</td>
-                    <td style="text-align:center;color:${r.atrasoFundDsb?'#ef4444':'var(--text-3)'};font-weight:${r.atrasoFundDsb?'700':'400'}">${r.atrasoFundDsb?(r.diasAtrasoFundDsb+'d'):'—'}</td>
-                    <td style="color:var(--text-2)">${r.fundRealDsb||'—'}</td>
-                    <td style="color:var(--text-2)">${r.usinPrevDsb||'—'}</td>
-                    <td style="color:${usinAcbEmpty&&refIsLate?'#ef4444':'var(--text-2)'}">${r.usinRealDsb||'—'}</td>
-                    <td style="color:${r.atrasoFundAcb?'#ef4444':'var(--text-2)'};font-weight:${r.atrasoFundAcb?'700':'400'}">${r.fundPrevAcb||'—'}</td>
-                    <td style="text-align:center;color:${r.atrasoFundAcb?'#ef4444':'var(--text-3)'};font-weight:${r.atrasoFundAcb?'700':'400'}">${r.atrasoFundAcb?(r.diasAtrasoFundAcb+'d'):'—'}</td>
-                    <td style="color:var(--text-2)">${r.fundRealAcb||'—'}</td>
-                    <td style="color:var(--text-2)">${r.usinPrevAcb||'—'}</td>
-                    <td style="color:${!usinAcbEmpty&&refIsLate?'#ef4444':r.isFinalizada?'#10b981':'var(--text-2)'};font-weight:${r.isFinalizada?'500':'400'}">${r.usinRealAcb||'—'}</td>
-                    <td>${statusBadge}</td>
                     <td>${recursoHTML}</td>
+                    <td>${statusBadge}</td>
                     <td class="centralized-status">${obsHTML}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        // --- ENGENHARIA · PROGRAMAÇÃO ---
+        
+// --- ENGENHARIA · PROGRAMAÇÃO ---
         // Reúne, de todas as tabelas de Açúcar e Álcool (Bagaceiras, Pentes, Rodetes Novos,
         // Periféricos, Camisas, Eixos e Reforma Diversas), apenas os itens cuja coluna
         // "Des." esteja marcada como "AG" ou "AG." (aguardando desenho / aguardando
