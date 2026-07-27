@@ -1468,6 +1468,7 @@
             areaDestino.innerHTML = "";
 
             let dadosLinhasBrutas = [];
+            let origemPorLinhaCarteiraGeral = [];
             if (tipoProduto === "CARTEIRA GERAL") {
                 const b = abasPlanilha[normalizarTextoParaFiltro("BAGACEIRAS")] || [];
                 const p = abasPlanilha[normalizarTextoParaFiltro("PENTES")] || [];
@@ -1477,6 +1478,18 @@
                 const ei = abasPlanilha[normalizarTextoParaFiltro("EIXOS")] || [];
                 const rd = abasPlanilha[normalizarTextoParaFiltro("REFORMA DIVERSAS")] || [];
                 dadosLinhasBrutas = [...b,...p,...r,...ce,...f,...ei,...rd];
+                // Guarda, para cada linha combinada, de qual aba de origem ela veio e qual era
+                // seu índice original nessa aba — necessário para localizar as etapas de
+                // Recurso (colunas OP1..OPn) corretas de cada peça na Carteira Geral.
+                origemPorLinhaCarteiraGeral = [
+                    ...b.map((_, i) => ({ cat: 'BAGACEIRAS', idx: i })),
+                    ...p.map((_, i) => ({ cat: 'PENTES', idx: i })),
+                    ...r.map((_, i) => ({ cat: 'RODETES NOVOS', idx: i })),
+                    ...ce.map((_, i) => ({ cat: 'CAMISAS', idx: i })),
+                    ...f.map((_, i) => ({ cat: 'PERIFÉRICOS', idx: i })),
+                    ...ei.map((_, i) => ({ cat: 'EIXOS', idx: i })),
+                    ...rd.map((_, i) => ({ cat: 'REFORMA DIVERSAS', idx: i })),
+                ];
             } else if (tipoProduto === "CAMISA") {
                 dadosLinhasBrutas = abasPlanilha[normalizarTextoParaFiltro("CAMISAS")] || [];
             } else {
@@ -1538,7 +1551,15 @@
                     : (tipoProduto === "REFORMA DIVERSAS") ? (reformaDiversasEtapasOPPorIndice[idxLinha] || [])
                     : (tipoProduto === "PENTES") ? (pentesEtapasOPPorIndice[idxLinha] || [])
                     : (tipoProduto === "RODETES NOVOS") ? (rodetesNovosEtapasOPPorIndice[idxLinha] || [])
-                    : (tipoProduto === "BAGACEIRAS") ? (bagaceirasEtapasOPPorIndice[idxLinha] || []) : [];
+                    : (tipoProduto === "BAGACEIRAS") ? (bagaceirasEtapasOPPorIndice[idxLinha] || [])
+                    : (tipoProduto === "CARTEIRA GERAL") ? (() => {
+                        // Cada linha da Carteira Geral vem de uma aba de origem diferente; usa o
+                        // índice original guardado em origemPorLinhaCarteiraGeral para buscar as
+                        // etapas de Recurso (OP1..OPn) na aba correta.
+                        const origem = origemPorLinhaCarteiraGeral[idxLinha];
+                        if (!origem) return [];
+                        return (relatorioEtapasArrayPorCategoria(origem.cat)[origem.idx]) || [];
+                    })() : [];
                 // Mantido para compatibilidade com a busca em texto livre (mostra só as etapas pendentes)
                 const recursoCamisaPendente = etapasCamisa.filter(e=>!e.concluida).map(e=>e.texto).join(' / ');
 
@@ -1661,8 +1682,8 @@
             let colunasHTML='', colunasFiltroHTML='', colspanRestante=3;
 
             if (tipoProduto==="CARTEIRA GERAL") {
-                colspanRestante=2;
-                colunasHTML=`${thOrdenavel('PV','pv')}${thOrdenavel('Item','item')}${thOrdenavel('Cliente','cliente')}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtd.','qtd',true)}${thOrdenavel('Prazo Entrega','pzEntregaObj')}${thOrdenavel('Status','statusUsinagem')}`;
+                colspanRestante=3;
+                colunasHTML=`${thOrdenavel('PV','pv')}${thOrdenavel('Item','item')}${thOrdenavel('Cliente','cliente')}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtd.','qtd',true)}${thOrdenavel('Prazo Entrega','pzEntregaObj')}${thOrdenavel('Recursos','recursoCamisa')}${thOrdenavel('Status','statusUsinagem')}`;
                 colunasFiltroHTML=`
                     <td><select id="filtro-col-pv" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-item" class="table-filter-select"></select></td>
@@ -1670,6 +1691,7 @@
                     <td><select id="filtro-col-desc" class="table-filter-select"></select></td>
                     <td><select id="filtro-col-qtd" class="table-filter-select"></select></td>
                     <td><input type="text" id="filtro-col-pzentrega" class="table-filter-input" placeholder="ex: 07/2026"></td>
+                    <td><input type="text" id="filtro-col-recurso-camisa" class="table-filter-input" placeholder="Buscar etapa..."></td>
                     <td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
             } else if (tipoProduto==="CAMISA") {
                 colspanRestante=5;
@@ -1832,7 +1854,7 @@
             {id:'filtro-col-acabam',          fKey:'fAcabam',          chave:'acabam',               tipo:'exato'},
             {id:'filtro-col-status-geral',    fKey:'fStatusGeral',     chave:'statusUsinagem',       tipo:'exato'},
             {id:'filtro-col-liberacao',       fKey:'fLiberacao',       chave:'statusUsinagem',       tipo:'exato', abas:['PENTES','PERIFÉRICOS']},
-            {id:'filtro-col-recurso-camisa',  fKey:'fRecursoCamisa',   chave:'recursoCamisa',        tipo:'contem', abas:['BAGACEIRAS','RODETES NOVOS','PENTES','CAMISA','EIXOS','REFORMA DIVERSAS']},
+            {id:'filtro-col-recurso-camisa',  fKey:'fRecursoCamisa',   chave:'recursoCamisa',        tipo:'contem', abas:['BAGACEIRAS','RODETES NOVOS','PENTES','CAMISA','EIXOS','REFORMA DIVERSAS','CARTEIRA GERAL']},
             {id:'filtro-col-bit',             fKey:'fBit',             chave:'bit',                  tipo:'exato', abas:['CAMISA','EIXOS']},
             {id:'filtro-col-tipo-camisa',     fKey:'fTipoCamisa',      chave:'tipoCamisa',           tipo:'exato', abas:['CAMISA']},
             {id:'filtro-col-pos-camisa',      fKey:'fPosCamisa',       chave:'posCamisa',            tipo:'exato', abas:['CAMISA','EIXOS']},
@@ -1957,7 +1979,7 @@
             atualizarCardsFiltrados(linhasFiltrosColuna);
 
             if (linhas.length===0) {
-                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?12:(nomeAbaAtiva==="PENTES"?12:(nomeAbaAtiva==="CARTEIRA GERAL"?8:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?17:(nomeAbaAtiva==="RODETES NOVOS"?12:(nomeAbaAtiva==="EIXOS"?14:(nomeAbaAtiva==="REFORMA DIVERSAS"?9:16)))))));
+                const totalColspan = nomeAbaAtiva==="BAGACEIRAS"?12:(nomeAbaAtiva==="PENTES"?12:(nomeAbaAtiva==="CARTEIRA GERAL"?9:(nomeAbaAtiva==="PERIFÉRICOS"?12:(nomeAbaAtiva==="CAMISA"?17:(nomeAbaAtiva==="RODETES NOVOS"?12:(nomeAbaAtiva==="EIXOS"?14:(nomeAbaAtiva==="REFORMA DIVERSAS"?9:16)))))));
                 tbody.innerHTML=`<tr><td colspan="${totalColspan}" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum registro corresponde aos filtros aplicados.</td></tr>`;
                 return;
             }
@@ -2003,6 +2025,7 @@
                         <td style="color:var(--text-2)">${vf.descricao}</td>
                         <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
                         <td>${alertaHTML}<span style="color:${vf.atrasadoVisual?'#ef4444':vf.proximaVisual?'#fbbf24':'var(--text-1)'}">${vf.pzEntregaStr}</span></td>
+                        <td style="font-size:0.75rem">${renderEtapasCamisa(vf.etapasCamisa)}</td>
                         <td>${statusBadge(vf.statusUsinagem)}</td>
                         <td class="centralized-status">${obsHTML}</td>`;
                 } else if (nomeAbaAtiva==="PERIFÉRICOS") {
