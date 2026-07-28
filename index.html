@@ -2924,27 +2924,30 @@
                     if (pv.toUpperCase()==='PV') return; // linha de cabeçalho residual
                     if (!pv && !cliente && !descricao) return;
 
-                    // Coluna "Des." (Desenho de Engenharia): só interessam os itens AG / AG.
-                    const desRaw  = String(buscarValor(linha,'Des')||'').trim();
-                    const desNorm = desRaw.toUpperCase().replace(/\.+$/,'');
-                    if (desNorm !== 'AG') return;
+                    // Coluna "Desenho Previsão": só interessam os itens cujo valor seja
+                    // diferente de "OK" (ex.: "AG", uma data prevista etc.). Células vazias
+                    // ou "-" não representam um item pendente (sem informação) e são ignoradas.
+                    const desenhoPrevisaoCru = buscarValor(linha,'Desenho Previsão');
+                    const desenhoPrevisaoEhData = (desenhoPrevisaoCru instanceof Date) || (typeof desenhoPrevisaoCru === 'number');
+                    const desenhoPrevisaoTextoNorm = desenhoPrevisaoEhData ? '' : String(desenhoPrevisaoCru||'').trim().toUpperCase().replace(/\.+$/,'');
+                    if (!desenhoPrevisaoEhData && (!desenhoPrevisaoTextoNorm || desenhoPrevisaoTextoNorm === '-' || desenhoPrevisaoTextoNorm === 'OK')) return;
 
+                    const desenhoPrevisaoInfo = desenhoPrevisaoEhData ? formatarDataExcel(desenhoPrevisaoCru) : null;
+                    const desenhoPrevisaoStr  = desenhoPrevisaoEhData ? desenhoPrevisaoInfo.stringLegivel : String(desenhoPrevisaoCru||'').trim();
+
+                    const item   = String(buscarValor(linha,'Item')||'').trim();
                     const peca   = String(buscarValor(linha,'OS/Peças')||buscarValor(linha,'OS/Peça')||buscarValor(linha,'O.S./Peça')||buscarValor(linha,'O.S./Peca')||'').trim();
                     const seq    = String(buscarValor(linha,'Seq')||buscarValor(linha,'Seq.')||'').trim();
-                    const qtd    = parseInt(buscarValor(linha,'Qtde')||buscarValor(linha,'Qtd')||buscarValor(linha,'Qtde.')||1)||1;
-                    const pzFundidoCru = buscarValor(linha,'Prazo Fund')||buscarValor(linha,'Prazo Fundido')||buscarValor(linha,'Data Prev. Fundido')||'';
                     const pzEntregaCru = buscarValor(linha,'Prazo Entrega')||buscarValor(linha,'Data Prev. Entrega')||buscarValor(linha,'Prazo\nEntrega\nEixo')||buscarValor(linha,'Prazo\nEntrega\nCamisa')||'';
-                    const statusCru    = buscarValor(linha,'Status Usinagem')||buscarValor(linha,'Status Us.')||buscarValor(linha,'Status')||buscarValor(linha,'Status\nCamisa')||'';
                     const obs = String(buscarValor(linha,'Observação')||buscarValor(linha,'Obs')||buscarValor(linha,'Observacao')||'').trim();
 
-                    const pzFundidoInfo = formatarDataExcel(pzFundidoCru);
                     const pzEntregaInfo = formatarDataExcel(pzEntregaCru);
 
                     programacaoListaOriginal.push({
-                        origem: o.label, pv, cliente, peca, seq, descricao, qtd,
-                        pzFundidoStr: pzFundidoInfo.stringLegivel, pzFundidoObj: pzFundidoInfo.dataObjeto,
+                        origem: o.label, pv, item, cliente, peca, seq, descricao,
+                        desenhoPrevisaoStr, desenhoPrevisaoObj: desenhoPrevisaoEhData ? desenhoPrevisaoInfo.dataObjeto : null,
                         prazoEntregaStr: pzEntregaInfo.stringLegivel, prazoEntregaObj: pzEntregaInfo.dataObjeto,
-                        status: String(statusCru).trim(), obs, des: desRaw
+                        obs
                     });
                 });
             });
@@ -2970,13 +2973,13 @@
                         <div class="card-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--card-color)"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="1"/></svg>
                         </div>
-                        <div class="card-meta"><div class="card-title">Aguardando Desenho</div><div class="card-value" id="prog-card-total">${programacaoListaOriginal.length}</div></div>
+                        <div class="card-meta"><div class="card-title">Desenho Previsão ≠ OK</div><div class="card-value" id="prog-card-total">${programacaoListaOriginal.length}</div></div>
                     </div>
                 </section>
 
                 <div class="table-card">
                     <div class="table-title-area">
-                        <div class="table-title-text">Itens AG. Desenho — Açúcar e Álcool</div>
+                        <div class="table-title-text">Itens com Desenho Previsão diferente de OK — Açúcar e Álcool</div>
                         <div id="prog-record-count" class="table-record-count">${programacaoListaOriginal.length} itens</div>
                     </div>
                     <div class="scroll-hint-mobile" id="scroll-hint-prog">↔ Arraste a tabela para o lado para ver mais colunas</div>
@@ -2986,29 +2989,25 @@
                                 <tr>
                                     <th>Tabela</th>
                                     ${thOrdenavel('PV','pv')}
-                                    ${thOrdenavel('Cliente','cliente')}
+                                    <th>Item</th>
                                     <th>OS/Peça</th>
                                     <th>Seq.</th>
+                                    ${thOrdenavel('Cliente','cliente')}
                                     ${thOrdenavel('Descrição','descricao')}
-                                    <th style="text-align:center">Qtde.</th>
-                                    ${thOrdenavel('Prazo Fundido','pzFundidoObj')}
+                                    <th class="centralized-status">Desenho Previsão</th>
                                     ${thOrdenavel('Prazo Entrega','prazoEntregaObj')}
-                                    <th class="centralized-status">Des.</th>
-                                    <th>Status</th>
                                     <th>Obs.</th>
                                 </tr>
                                 <tr class="filter-row">
                                     <td><select id="prog-f-origem" class="table-filter-select"></select></td>
                                     <td><select id="prog-f-pv" class="table-filter-select"></select></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
                                     <td><select id="prog-f-cliente" class="table-filter-select"></select></td>
-                                    <td></td>
-                                    <td></td>
                                     <td><input type="text" id="prog-f-desc" class="table-filter-input" placeholder="Buscar..."></td>
                                     <td></td>
                                     <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td><select id="prog-f-status" class="table-filter-select"></select></td>
                                     <td></td>
                                 </tr>
                             </thead>
@@ -3033,7 +3032,6 @@
             populateSelect('prog-f-origem',  programacaoListaOriginal.map(r=>r.origem));
             populateSelect('prog-f-pv',      programacaoListaOriginal.map(r=>r.pv));
             populateSelect('prog-f-cliente', programacaoListaOriginal.map(r=>r.cliente));
-            populateSelect('prog-f-status',  programacaoListaOriginal.map(r=>r.status));
 
             document.querySelectorAll('#tbl-prog .table-filter-select, #tbl-prog .table-filter-input').forEach(el => {
                 el.addEventListener('change', programacaoRenderizar);
@@ -3067,13 +3065,11 @@
             const fPv      = document.getElementById('prog-f-pv')?.value||'';
             const fCliente = document.getElementById('prog-f-cliente')?.value||'';
             const fDesc    = normalizarTextoParaFiltro(document.getElementById('prog-f-desc')?.value||'');
-            const fStatus  = document.getElementById('prog-f-status')?.value||'';
 
             let lista = programacaoListaOriginal.filter(r => {
                 if (fOrigem  && normalizarTextoParaFiltro(r.origem)  !== fOrigem)  return false;
                 if (fPv      && normalizarTextoParaFiltro(r.pv)      !== fPv)      return false;
                 if (fCliente && normalizarTextoParaFiltro(r.cliente) !== fCliente) return false;
-                if (fStatus  && normalizarTextoParaFiltro(r.status)  !== fStatus)  return false;
                 if (fDesc    && !normalizarTextoParaFiltro(r.descricao).includes(fDesc)) return false;
                 return true;
             });
@@ -3082,7 +3078,7 @@
                 const campo = programacaoOrdenacao.campo, dir = programacaoOrdenacao.dir;
                 lista = [...lista].sort((a,b) => {
                     const va = a[campo], vb = b[campo];
-                    if (campo === 'pzFundidoObj' || campo === 'prazoEntregaObj') {
+                    if (campo === 'prazoEntregaObj') {
                         if (!va && !vb) return 0;
                         if (!va) return 1;
                         if (!vb) return -1;
@@ -3100,7 +3096,7 @@
 
             tbody.innerHTML = '';
             if (lista.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum item aguardando desenho encontrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:2.5rem;color:var(--text-3);font-size:0.82rem">Nenhum item com Desenho Previsão diferente de OK encontrado.</td></tr>`;
                 return;
             }
 
@@ -3114,15 +3110,13 @@
                 tr.innerHTML = `
                     <td><span class="badge-status-usinagem">${r.origem}</span></td>
                     <td><b style="color:var(--text-1)">${r.pv||'—'}</b></td>
-                    <td>${r.cliente||'—'}</td>
+                    <td style="color:var(--text-2)">${r.item||'—'}</td>
                     <td style="color:var(--text-2)">${r.peca||'—'}</td>
                     <td style="color:var(--text-2)">${r.seq||'—'}</td>
+                    <td>${r.cliente||'—'}</td>
                     <td style="color:var(--text-2)">${r.descricao||'—'}</td>
-                    <td style="text-align:center;font-weight:600;color:var(--accent)">${r.qtd}</td>
-                    <td style="color:var(--text-2)">${r.pzFundidoStr||'—'}</td>
+                    <td class="centralized-status">${formatarStatusComIcone(r.desenhoPrevisaoStr)}</td>
                     <td style="color:var(--text-2)">${r.prazoEntregaStr||'—'}</td>
-                    <td class="centralized-status">${formatarStatusComIcone(r.des)}</td>
-                    <td><span class="badge-status-usinagem">${r.status||'—'}</span></td>
                     <td class="centralized-status">${obsHTML}</td>
                 `;
                 tbody.appendChild(tr);
