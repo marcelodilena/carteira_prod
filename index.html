@@ -2256,6 +2256,7 @@
                     const isExpedido  = ['EXPEDIDO','EXPEDIDOS'].includes(statusNorm);
                     const isAgFundido = ['AG FUNDIDO','AG. FUNDIDO','AG FUSAO','AG. FUSÃO','AG FUSÃO'].includes(statusNorm);
                     const isAgColeta  = ['AG COLETAR','AG. COLETAR','AG COLETA','AG. COLETA'].includes(statusNorm);
+                    const isAgLaudo   = ['AG LAUDO','AG. LAUDO'].includes(statusNorm);
 
                     // Ag. Desenho: coluna "Desenho Previsão" com valor diferente de "OK" (ex.: "AG",
                     // uma data prevista etc.). Vazio/"-" não conta (sem informação para o item).
@@ -2282,7 +2283,7 @@
                         pzEntregaStr: pzEntregaInfo.stringLegivel, pzEntregaObj: pzEntregaInfo.dataObjeto,
                         statusTxt, statusNorm,
                         categoria: cat.tipo, categoriaLabel: cat.label,
-                        isAtrasado, isLiberado, isExpedido, isAgFundido, isAgColeta, isAgDesenho,
+                        isAtrasado, isLiberado, isExpedido, isAgFundido, isAgColeta, isAgLaudo, isAgDesenho,
                         etapas, recursosTexto, observacao
                     });
                 });
@@ -2340,6 +2341,7 @@
                                 <option value="expedido">Expedido</option>
                                 <option value="ag-fundido">AG. Fundido</option>
                                 <option value="ag-coleta">AG. Coleta</option>
+                                <option value="ag-laudo">Ag. Laudo</option>
                                 <option value="ag-desenho">Ag. Desenho</option>
                             </select>
                         </div>
@@ -2427,6 +2429,7 @@
                 if (fStatus === 'expedido'   && !r.isExpedido)  return false;
                 if (fStatus === 'ag-fundido' && !r.isAgFundido) return false;
                 if (fStatus === 'ag-coleta'  && !r.isAgColeta) return false;
+                if (fStatus === 'ag-laudo'   && !r.isAgLaudo) return false;
                 if (fStatus === 'ag-desenho' && !r.isAgDesenho) return false;
                 if (fPrazoDe || fPrazoAte) {
                     if (!(r.pzEntregaObj instanceof Date)) return false;
