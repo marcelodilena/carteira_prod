@@ -2273,6 +2273,16 @@
             { tipo: 'REFORMA DIVERSAS',  label: 'Reforma Diversas' },
         ];
 
+        const RELATORIO_STATUS_OPCOES = [
+            { valor: 'atraso',      label: 'Em Atraso' },
+            { valor: 'liberado',    label: 'Liberado' },
+            { valor: 'expedido',    label: 'Expedido' },
+            { valor: 'ag-fundido',  label: 'AG. Fundido' },
+            { valor: 'ag-coleta',   label: 'AG. Coleta' },
+            { valor: 'ag-laudo',    label: 'Ag. Laudo' },
+            { valor: 'ag-desenho',  label: 'Ag. Desenho' },
+        ];
+
         // Devolve o array de etapas OP1..OPn (por índice de linha) correspondente à categoria
         // do relatório, reaproveitando os mesmos índices já montados para as telas de cada aba.
         function relatorioEtapasArrayPorCategoria(tipo) {
@@ -2369,9 +2379,16 @@
         // ============================================================
         const msEstado = {};
 
-        function msInicializar(id, valores, selecionadosIniciais, onChange) {
+        function msInicializar(id, itens, selecionadosIniciais, onChange) {
+            const normalizados = (itens || [])
+                .filter(v => v !== undefined && v !== null)
+                .map(v => (v !== null && typeof v === 'object') ? { valor: String(v.valor), label: String(v.label) } : { valor: String(v), label: String(v) })
+                .filter(it => it.valor.trim() !== '');
+            const vistos = new Set();
+            const unicos = [];
+            normalizados.forEach(it => { if (!vistos.has(it.valor)) { vistos.add(it.valor); unicos.push(it); } });
             msEstado[id] = {
-                valores: [...new Set(valores.filter(v => v !== undefined && v !== null && String(v).trim() !== ''))],
+                valores: unicos,
                 selecionados: new Set(selecionadosIniciais || []),
                 onChange: onChange || function(){}
             };
@@ -2389,7 +2406,7 @@
             estado.filtroAtual = filtroTexto || '';
             const filtro = normalizarTextoParaFiltro(estado.filtroAtual);
             const lista = filtro
-                ? estado.valores.filter(v => normalizarTextoParaFiltro(String(v)).includes(filtro))
+                ? estado.valores.filter(it => normalizarTextoParaFiltro(it.label).includes(filtro))
                 : estado.valores;
             estado.listaVisivel = lista;
 
@@ -2398,11 +2415,11 @@
                 return;
             }
 
-            const itensHTML = lista.map(v => {
-                const marcado = estado.selecionados.has(v) ? 'checked' : '';
+            const itensHTML = lista.map(it => {
+                const marcado = estado.selecionados.has(it.valor) ? 'checked' : '';
                 return `<label class="ms-option">
-                    <input type="checkbox" ${marcado} data-valor="${msAttrEscape(v)}">
-                    <span>${escaparHTML(v)}</span>
+                    <input type="checkbox" ${marcado} data-valor="${msAttrEscape(it.valor)}">
+                    <span>${escaparHTML(it.label)}</span>
                 </label>`;
             }).join('');
 
@@ -2430,7 +2447,7 @@
             const cbTodos = document.getElementById(id + '-selecionar-tudo');
             if (!estado || !cbTodos || !estado.listaVisivel) return;
             const total = estado.listaVisivel.length;
-            const marcados = estado.listaVisivel.filter(v => estado.selecionados.has(v)).length;
+            const marcados = estado.listaVisivel.filter(it => estado.selecionados.has(it.valor)).length;
             cbTodos.checked = total > 0 && marcados === total;
             cbTodos.indeterminate = marcados > 0 && marcados < total;
         }
@@ -2450,7 +2467,7 @@
         function msToggleTodos(id, marcar) {
             const estado = msEstado[id];
             if (!estado || !estado.listaVisivel) return;
-            estado.listaVisivel.forEach(v => { if (marcar) estado.selecionados.add(v); else estado.selecionados.delete(v); });
+            estado.listaVisivel.forEach(it => { if (marcar) estado.selecionados.add(it.valor); else estado.selecionados.delete(it.valor); });
             msRenderOpcoes(id, estado.filtroAtual);
             msAtualizarLabel(id);
             estado.onChange();
@@ -2466,7 +2483,11 @@
             if (!estado || !label) return;
             const n = estado.selecionados.size;
             if (n === 0) label.textContent = 'Todos';
-            else if (n === 1) label.textContent = [...estado.selecionados][0];
+            else if (n === 1) {
+                const valor = [...estado.selecionados][0];
+                const item = estado.valores.find(it => it.valor === valor);
+                label.textContent = item ? item.label : valor;
+            }
             else label.textContent = `${n} selecionados`;
         }
 
@@ -2526,6 +2547,15 @@
             msInicializar('relatorio-filtro-cliente', clientes, [], relatorioFiltrar);
         }
 
+        function relatorioPopularCategorias() {
+            const itens = RELATORIO_CATEGORIAS.map(c => ({ valor: c.tipo, label: c.label }));
+            msInicializar('relatorio-filtro-categoria', itens, [], relatorioFiltrar);
+        }
+
+        function relatorioPopularStatus() {
+            msInicializar('relatorio-filtro-status', RELATORIO_STATUS_OPCOES, [], relatorioFiltrar);
+        }
+
         function construirTelaRelatorio() {
             nomeAbaAtiva = 'RELATORIO';
             document.getElementById('statusbar-modulo').textContent = 'Relatório';
@@ -2563,25 +2593,35 @@
                                 </div>
                             </div>
                         </div>
-                        <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:180px;">
+                        <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:200px;">
                             <label style="font-size:0.72rem;color:var(--text-3);font-weight:600;text-transform:uppercase;">Categoria</label>
-                            <select id="relatorio-filtro-categoria" class="table-filter-select" style="width:100%;">
-                                <option value="">Todos</option>
-                                ${RELATORIO_CATEGORIAS.map(c => `<option value="${c.tipo}">${c.label}</option>`).join('')}
-                            </select>
+                            <div class="ms-wrap" id="relatorio-filtro-categoria-wrap">
+                                <button type="button" class="ms-btn" id="relatorio-filtro-categoria-btn" onclick="msAlternar('relatorio-filtro-categoria')">
+                                    <span class="ms-btn-label" id="relatorio-filtro-categoria-label">Todos</span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div class="ms-panel" id="relatorio-filtro-categoria-panel">
+                                    <div class="ms-search-box">
+                                        <input type="text" placeholder="Pesquisar" oninput="msFiltrarOpcoes('relatorio-filtro-categoria', this.value)">
+                                    </div>
+                                    <div class="ms-options" id="relatorio-filtro-categoria-options"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:180px;">
+                        <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:200px;">
                             <label style="font-size:0.72rem;color:var(--text-3);font-weight:600;text-transform:uppercase;">Status</label>
-                            <select id="relatorio-filtro-status" class="table-filter-select" style="width:100%;">
-                                <option value="">Todos</option>
-                                <option value="atraso">Em Atraso</option>
-                                <option value="liberado">Liberado</option>
-                                <option value="expedido">Expedido</option>
-                                <option value="ag-fundido">AG. Fundido</option>
-                                <option value="ag-coleta">AG. Coleta</option>
-                                <option value="ag-laudo">Ag. Laudo</option>
-                                <option value="ag-desenho">Ag. Desenho</option>
-                            </select>
+                            <div class="ms-wrap" id="relatorio-filtro-status-wrap">
+                                <button type="button" class="ms-btn" id="relatorio-filtro-status-btn" onclick="msAlternar('relatorio-filtro-status')">
+                                    <span class="ms-btn-label" id="relatorio-filtro-status-label">Todos</span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div class="ms-panel" id="relatorio-filtro-status-panel">
+                                    <div class="ms-search-box">
+                                        <input type="text" placeholder="Pesquisar" oninput="msFiltrarOpcoes('relatorio-filtro-status', this.value)">
+                                    </div>
+                                    <div class="ms-options" id="relatorio-filtro-status-options"></div>
+                                </div>
+                            </div>
                         </div>
                         <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:150px;">
                             <label style="font-size:0.72rem;color:var(--text-3);font-weight:600;text-transform:uppercase;">Entrega de</label>
@@ -2643,14 +2683,30 @@
             `;
 
             relatorioPopularClientes();
+            relatorioPopularCategorias();
+            relatorioPopularStatus();
             ativarAvisoScrollMobile('table-wrapper-relatorio', 'scroll-hint-relatorio');
             relatorioFiltrar();
         }
 
+        // Verifica se um item do relatório atende a uma determinada opção de status
+        function relatorioItemAtendeStatus(chave, r) {
+            switch (chave) {
+                case 'atraso':      return r.isAtrasado;
+                case 'liberado':    return r.isLiberado;
+                case 'expedido':    return r.isExpedido;
+                case 'ag-fundido':  return r.isAgFundido;
+                case 'ag-coleta':   return r.isAgColeta;
+                case 'ag-laudo':    return r.isAgLaudo;
+                case 'ag-desenho':  return r.isAgDesenho;
+                default:            return false;
+            }
+        }
+
         function relatorioFiltrar() {
-            const fClientes  = msGetSelecionados('relatorio-filtro-cliente');
-            const fCategoria = (document.getElementById('relatorio-filtro-categoria')?.value || '');
-            const fStatus    = (document.getElementById('relatorio-filtro-status')?.value || '');
+            const fClientes   = msGetSelecionados('relatorio-filtro-cliente');
+            const fCategorias = msGetSelecionados('relatorio-filtro-categoria');
+            const fStatuses   = msGetSelecionados('relatorio-filtro-status');
             const fBusca     = normalizarTextoParaFiltro(document.getElementById('relatorio-filtro-busca')?.value || '');
             const fPrazoDeVal  = document.getElementById('relatorio-filtro-prazo-de')?.value || '';
             const fPrazoAteVal = document.getElementById('relatorio-filtro-prazo-ate')?.value || '';
@@ -2661,14 +2717,8 @@
 
             relatorioListaFiltrada = relatorioDadosCompletos.filter(r => {
                 if (fClientes.length && !fClientes.includes(r.cliente)) return false;
-                if (fCategoria && r.categoria !== fCategoria) return false;
-                if (fStatus === 'atraso'     && !r.isAtrasado)  return false;
-                if (fStatus === 'liberado'   && !r.isLiberado)  return false;
-                if (fStatus === 'expedido'   && !r.isExpedido)  return false;
-                if (fStatus === 'ag-fundido' && !r.isAgFundido) return false;
-                if (fStatus === 'ag-coleta'  && !r.isAgColeta) return false;
-                if (fStatus === 'ag-laudo'   && !r.isAgLaudo) return false;
-                if (fStatus === 'ag-desenho' && !r.isAgDesenho) return false;
+                if (fCategorias.length && !fCategorias.includes(r.categoria)) return false;
+                if (fStatuses.length && !fStatuses.some(s => relatorioItemAtendeStatus(s, r))) return false;
                 if (fPrazoDe || fPrazoAte) {
                     if (!(r.pzEntregaObj instanceof Date)) return false;
                     const d = new Date(r.pzEntregaObj); d.setHours(0,0,0,0);
@@ -2753,9 +2803,11 @@
         }
 
         function relatorioLimparFiltros() {
-            const campos = ['relatorio-filtro-categoria','relatorio-filtro-status','relatorio-filtro-prazo-de','relatorio-filtro-prazo-ate'];
+            const campos = ['relatorio-filtro-prazo-de','relatorio-filtro-prazo-ate'];
             campos.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
             msLimpar('relatorio-filtro-cliente');
+            msLimpar('relatorio-filtro-categoria');
+            msLimpar('relatorio-filtro-status');
             const busca = document.getElementById('relatorio-filtro-busca');
             if (busca) busca.value = '';
             relatorioOrdenacao = { campo: null, dir: 1 };
@@ -2771,13 +2823,14 @@
             if (!relatorioListaFiltrada) relatorioListaFiltrada = [];
             const fClientesSel = msGetSelecionados('relatorio-filtro-cliente');
             const fCliente   = fClientesSel.length ? fClientesSel.join(', ') : 'Todos';
-            const fCategoriaSel = document.getElementById('relatorio-filtro-categoria');
-            const fCategoria  = fCategoriaSel && fCategoriaSel.value
-                ? (RELATORIO_CATEGORIAS.find(c => c.tipo === fCategoriaSel.value)?.label || fCategoriaSel.value)
+            const fCategoriasSel = msGetSelecionados('relatorio-filtro-categoria');
+            const fCategoria = fCategoriasSel.length
+                ? fCategoriasSel.map(v => RELATORIO_CATEGORIAS.find(c => c.tipo === v)?.label || v).join(', ')
                 : 'Todas';
-            const statusLabels = { atraso:'Em Atraso', liberado:'Liberado', expedido:'Expedido', 'ag-fundido':'AG. Fundido', 'ag-coleta':'AG. Coleta' };
-            const fStatusVal = document.getElementById('relatorio-filtro-status')?.value || '';
-            const fStatus = fStatusVal ? statusLabels[fStatusVal] : 'Todos';
+            const fStatusesSel = msGetSelecionados('relatorio-filtro-status');
+            const fStatus = fStatusesSel.length
+                ? fStatusesSel.map(v => RELATORIO_STATUS_OPCOES.find(s => s.valor === v)?.label || v).join(', ')
+                : 'Todos';
             const fBusca  = document.getElementById('relatorio-filtro-busca')?.value || '';
             const fPrazoDeVal  = document.getElementById('relatorio-filtro-prazo-de')?.value || '';
             const fPrazoAteVal = document.getElementById('relatorio-filtro-prazo-ate')?.value || '';
