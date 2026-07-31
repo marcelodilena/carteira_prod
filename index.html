@@ -478,32 +478,14 @@
             outline: none;
         }
         .ms-search-box input:focus { border-color: var(--accent); }
-        .ms-actions {
-            display: flex; gap: 6px;
-            padding: 6px 8px;
-            border-bottom: 1px solid var(--row-border-light);
-        }
-        .ms-actions button {
-            flex: 1;
-            background: var(--surface-3);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            padding: 3px 6px;
-            font-size: 0.66rem;
-            font-weight: 600;
-            color: var(--text-2);
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .ms-actions button:hover { background: var(--accent-dim); color: var(--accent); border-color: rgba(233,115,50,0.3); }
         .ms-options {
             max-height: 220px;
             overflow-y: auto;
-            padding: 4px;
+            padding: 6px 4px;
         }
         .ms-option {
             display: flex; align-items: center; gap: 7px;
-            padding: 5px 7px;
+            padding: 4px 7px;
             border-radius: 5px;
             font-size: 0.74rem;
             color: var(--text-1);
@@ -513,7 +495,32 @@
         .ms-option:hover { background: var(--surface-2); }
         .ms-option input[type="checkbox"] { flex-shrink: 0; width: 13px; height: 13px; accent-color: var(--accent); cursor: pointer; }
         .ms-option span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ms-select-all {
+            font-weight: 700;
+            border-bottom: 1px solid var(--row-border-light);
+            margin: 0 3px 4px;
+            padding: 4px 4px 8px;
+        }
         .ms-vazio { padding: 10px; text-align: center; font-size: 0.72rem; color: var(--text-3); }
+        .ms-footer {
+            display: flex; justify-content: flex-end; gap: 8px;
+            padding: 8px;
+            border-top: 1px solid var(--row-border-light);
+            background: var(--surface-2);
+        }
+        .ms-footer button {
+            padding: 5px 16px;
+            border-radius: 4px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 1px solid var(--border);
+        }
+        .ms-btn-ok { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .ms-btn-ok:hover { background: #c4561a; }
+        .ms-btn-cancel { background: var(--surface-1); color: var(--text-2); }
+        .ms-btn-cancel:hover { background: var(--surface-3); }
 
         /* --- BADGES E ÍCONES --- */
         .btn-obs-trigger {
@@ -2396,49 +2403,79 @@
             return escaparHTML(v).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
         }
 
+        // Renderiza a lista de opções (usa a seleção em rascunho "staging" enquanto
+        // o painel está aberto, só é confirmada de fato ao clicar em OK)
         function msRenderOpcoes(id, filtroTexto) {
             const estado = msEstado[id];
             const cont = document.getElementById(id + '-options');
             if (!estado || !cont) return;
-            const filtro = normalizarTextoParaFiltro(filtroTexto || '');
+            estado.filtroAtual = filtroTexto || '';
+            const filtro = normalizarTextoParaFiltro(estado.filtroAtual);
             const lista = filtro
                 ? estado.valores.filter(v => normalizarTextoParaFiltro(String(v)).includes(filtro))
                 : estado.valores;
+            estado.listaVisivel = lista;
 
             if (lista.length === 0) {
                 cont.innerHTML = `<div class="ms-vazio">Nenhuma opção encontrada.</div>`;
                 return;
             }
-            cont.innerHTML = lista.map(v => {
-                const marcado = estado.selecionados.has(v) ? 'checked' : '';
+
+            const stage = estado.staging || estado.selecionados;
+            const itensHTML = lista.map(v => {
+                const marcado = stage.has(v) ? 'checked' : '';
                 return `<label class="ms-option">
                     <input type="checkbox" ${marcado} data-valor="${msAttrEscape(v)}">
                     <span>${escaparHTML(v)}</span>
                 </label>`;
             }).join('');
 
-            cont.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cont.innerHTML = `
+                <label class="ms-option ms-select-all">
+                    <input type="checkbox" id="${id}-selecionar-tudo">
+                    <span>(Selecionar Tudo)</span>
+                </label>
+                ${itensHTML}
+            `;
+
+            cont.querySelectorAll('.ms-option:not(.ms-select-all) input[type="checkbox"]').forEach(cb => {
                 cb.addEventListener('change', () => msToggleOpcao(id, cb.dataset.valor));
             });
+            const cbTodos = document.getElementById(id + '-selecionar-tudo');
+            if (cbTodos) cbTodos.addEventListener('change', () => msToggleTodos(id, cbTodos.checked));
+
+            msAtualizarSelecionarTudo(id);
+        }
+
+        // Atualiza o estado (marcado/parcial) do checkbox "(Selecionar Tudo)"
+        // considerando apenas os itens atualmente visíveis (respeitando a busca)
+        function msAtualizarSelecionarTudo(id) {
+            const estado = msEstado[id];
+            const cbTodos = document.getElementById(id + '-selecionar-tudo');
+            if (!estado || !cbTodos || !estado.listaVisivel) return;
+            const stage = estado.staging || estado.selecionados;
+            const total = estado.listaVisivel.length;
+            const marcados = estado.listaVisivel.filter(v => stage.has(v)).length;
+            cbTodos.checked = total > 0 && marcados === total;
+            cbTodos.indeterminate = marcados > 0 && marcados < total;
         }
 
         function msToggleOpcao(id, valor) {
             const estado = msEstado[id];
             if (!estado) return;
-            if (estado.selecionados.has(valor)) estado.selecionados.delete(valor);
-            else estado.selecionados.add(valor);
-            msAtualizarLabel(id);
-            estado.onChange();
+            const stage = estado.staging || estado.selecionados;
+            if (stage.has(valor)) stage.delete(valor);
+            else stage.add(valor);
+            msAtualizarSelecionarTudo(id);
         }
 
-        function msMarcarTodos(id, marcar) {
+        // Marca/desmarca todos os itens atualmente visíveis (respeitando a busca)
+        function msToggleTodos(id, marcar) {
             const estado = msEstado[id];
-            if (!estado) return;
-            if (marcar) estado.valores.forEach(v => estado.selecionados.add(v));
-            else estado.selecionados.clear();
-            msRenderOpcoes(id, document.querySelector(`#${id}-panel .ms-search-box input`)?.value || '');
-            msAtualizarLabel(id);
-            estado.onChange();
+            if (!estado || !estado.listaVisivel) return;
+            const stage = estado.staging || estado.selecionados;
+            estado.listaVisivel.forEach(v => { if (marcar) stage.add(v); else stage.delete(v); });
+            msRenderOpcoes(id, estado.filtroAtual);
         }
 
         function msFiltrarOpcoes(id, texto) {
@@ -2460,11 +2497,12 @@
             return estado ? [...estado.selecionados] : [];
         }
 
+        // Usado por relatorioLimparFiltros(): zera a seleção confirmada (fora do fluxo do painel)
         function msLimpar(id) {
             const estado = msEstado[id];
             if (!estado) return;
             estado.selecionados.clear();
-            msRenderOpcoes(id);
+            estado.staging = null;
             msAtualizarLabel(id);
         }
 
@@ -2473,25 +2511,55 @@
             const btnAtual = document.getElementById(id + '-btn');
             if (!painelAtual) return;
             const jaAberto = painelAtual.classList.contains('aberto');
-            // Fecha todos os multi-selects abertos antes de abrir/fechar este
-            document.querySelectorAll('.ms-panel.aberto').forEach(p => p.classList.remove('aberto'));
-            document.querySelectorAll('.ms-btn.aberto').forEach(b => b.classList.remove('aberto'));
+            // Fecha (cancelando) qualquer outro multi-select aberto antes de abrir este
+            document.querySelectorAll('.ms-panel.aberto').forEach(p => {
+                msCancelarSelecao(p.id.replace('-panel',''));
+            });
             if (!jaAberto) {
+                const estado = msEstado[id];
+                if (estado) estado.staging = new Set(estado.selecionados);
                 painelAtual.classList.add('aberto');
                 btnAtual.classList.add('aberto');
                 const campoBusca = painelAtual.querySelector('.ms-search-box input');
-                if (campoBusca) { campoBusca.value = ''; msRenderOpcoes(id); campoBusca.focus(); }
+                if (campoBusca) campoBusca.value = '';
+                msRenderOpcoes(id, '');
+                if (campoBusca) campoBusca.focus();
             }
         }
 
-        // Fecha qualquer multi-select aberto ao clicar fora dele
+        function msFecharPainelVisual(id) {
+            const painel = document.getElementById(id + '-panel');
+            const btn = document.getElementById(id + '-btn');
+            if (painel) painel.classList.remove('aberto');
+            if (btn) btn.classList.remove('aberto');
+        }
+
+        // Confirma a seleção em rascunho (botão OK): aplica de fato o filtro
+        function msConfirmar(id) {
+            const estado = msEstado[id];
+            if (!estado) return;
+            if (estado.staging) estado.selecionados = new Set(estado.staging);
+            estado.staging = null;
+            msFecharPainelVisual(id);
+            msAtualizarLabel(id);
+            estado.onChange();
+        }
+
+        // Descarta a seleção em rascunho (botão Cancelar ou clique fora): não altera o filtro
+        function msCancelarSelecao(id) {
+            const estado = msEstado[id];
+            if (estado) estado.staging = null;
+            msFecharPainelVisual(id);
+        }
+
+        // Fecha (cancelando) qualquer multi-select aberto ao clicar fora dele
         document.addEventListener('click', (ev) => {
             document.querySelectorAll('.ms-wrap').forEach(wrap => {
                 if (!wrap.contains(ev.target)) {
                     const painel = wrap.querySelector('.ms-panel');
-                    const btn = wrap.querySelector('.ms-btn');
-                    if (painel) painel.classList.remove('aberto');
-                    if (btn) btn.classList.remove('aberto');
+                    if (painel && painel.classList.contains('aberto')) {
+                        msCancelarSelecao(painel.id.replace('-panel',''));
+                    }
                 }
             });
         });
@@ -2533,13 +2601,13 @@
                                 </button>
                                 <div class="ms-panel" id="relatorio-filtro-cliente-panel">
                                     <div class="ms-search-box">
-                                        <input type="text" placeholder="Buscar cliente..." oninput="msFiltrarOpcoes('relatorio-filtro-cliente', this.value)">
-                                    </div>
-                                    <div class="ms-actions">
-                                        <button type="button" onclick="msMarcarTodos('relatorio-filtro-cliente', true)">Marcar todos</button>
-                                        <button type="button" onclick="msMarcarTodos('relatorio-filtro-cliente', false)">Limpar</button>
+                                        <input type="text" placeholder="Pesquisar" oninput="msFiltrarOpcoes('relatorio-filtro-cliente', this.value)">
                                     </div>
                                     <div class="ms-options" id="relatorio-filtro-cliente-options"></div>
+                                    <div class="ms-footer">
+                                        <button type="button" class="ms-btn-ok" onclick="msConfirmar('relatorio-filtro-cliente')">OK</button>
+                                        <button type="button" class="ms-btn-cancel" onclick="msCancelarSelecao('relatorio-filtro-cliente')">Cancelar</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
