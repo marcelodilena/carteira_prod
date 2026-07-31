@@ -360,6 +360,11 @@
         .table-wrapper::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
         .table-wrapper::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
 
+        /* O card de filtros precisa de overflow visível para que o dropdown
+           customizado (multi-select de Cliente) não seja cortado pelo
+           overflow:hidden usado nos cantos arredondados do .table-card */
+        .table-card-filtros { overflow: visible; }
+
         .data-table { width: 100%; border-collapse: collapse; text-align: left; }
         .data-table thead { position: sticky; top: 0; z-index: 10; }
         .data-table thead th {
@@ -2541,7 +2546,7 @@
                     <h3>Relatório · Açúcar e Álcool</h3>
                 </div>
 
-                <div class="table-card" style="margin-bottom:0.75rem;flex:none;">
+                <div class="table-card table-card-filtros" style="margin-bottom:0.75rem;flex:none;">
                     <div style="display:flex;flex-wrap:wrap;gap:0.75rem;padding:1rem;align-items:flex-end;">
                         <div style="display:flex;flex-direction:column;gap:0.3rem;min-width:220px;">
                             <label style="font-size:0.72rem;color:var(--text-3);font-weight:600;text-transform:uppercase;">Cliente</label>
