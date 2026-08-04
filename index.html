@@ -2350,7 +2350,11 @@
                     if (cat.tipo === 'CAMISAS') {
                         isLiberado = ['CONCLUIDO','CONCLUÍDO','AG EIXO','AG. EIXO'].includes(statusNorm);
                     } else {
-                        isLiberado = !isAgFundido;
+                        // "Liberado" deve ser mutuamente exclusivo dos demais status do filtro
+                        // (Expedido, Ag. Fundido, Ag. Coleta, Ag. Laudo), senão um item Expedido,
+                        // por exemplo, também é contado como Liberado e escapa do filtro quando
+                        // só "Expedido" é desmarcado.
+                        isLiberado = !isAgFundido && !isExpedido && !isAgColeta && !isAgLaudo;
                     }
 
                     let isAtrasado = false;
