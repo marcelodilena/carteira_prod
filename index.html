@@ -1144,7 +1144,13 @@
                     // blankrows:true garante que a ordem/índice das linhas retornadas seja sempre
                     // a mesma da varredura bruta de células abaixo, permitindo alinhar as colunas
                     // OP1..OP9 (e sua cor de preenchimento) com cada linha.
-                    abasPlanilha[chaveAba] = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: "", blankrows: true });
+                    // A aba ROLOS tem uma linha extra acima do cabeçalho (rótulos de grupo
+                    // "ROLOS"/"CAMISA"/"EIXOS"), então a leitura precisa começar a partir da
+                    // 2ª linha (range:1) para usar os nomes de coluna reais como cabeçalho.
+                    const opcoesLeitura = (chaveAba === normalizarTextoParaFiltro("ROLOS"))
+                        ? { defval: "", blankrows: true, range: 1 }
+                        : { defval: "", blankrows: true };
+                    abasPlanilha[chaveAba] = XLSX.utils.sheet_to_json(workbook.Sheets[name], opcoesLeitura);
                     if (chaveAba === normalizarTextoParaFiltro("REFORMA DIVERSAS")) {
                         reformaDiversasEtapasOPPorIndice = extrairEtapasColunasOP(workbook.Sheets[name]);
                     }
@@ -1407,6 +1413,15 @@
                 const p=str.split('-');
                 if(p[0].length===4){ const dt=new Date(p[0],p[1]-1,p[2]); return {stringLegivel:`${p[2]}/${p[1]}/${p[0].slice(-2)}`, dataObjeto:dt}; }
             }
+            // Datas gravadas como texto no formato DD/MM/AA ou DD/MM/AAAA (ex.: aba ROLOS,
+            // coluna "Data Final"), em vez de data real do Excel.
+            if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(str)) {
+                const p = str.split('/');
+                let ano = parseInt(p[2], 10);
+                if (p[2].length <= 2) ano += 2000;
+                const dt = new Date(ano, parseInt(p[1],10)-1, parseInt(p[0],10));
+                return { stringLegivel: `${p[0].padStart(2,'0')}/${p[1].padStart(2,'0')}/${String(ano).slice(-2)}`, dataObjeto: dt };
+            }
             return { stringLegivel: str, dataObjeto: null };
         }
 
@@ -1483,7 +1498,9 @@
                 const qtdRaw    = buscarValor(linha,'Qtde')||buscarValor(linha,'Qtd')||buscarValor(linha,'Qtde.')||1;
                 const qtdNum    = parseInt(qtdRaw)||0;
                 const pzFundidoCru = buscarValor(linha,'Prazo Fund')||buscarValor(linha,'Prazo Fundido')||buscarValor(linha,'Data Prev. Fundido');
-                const pzEntregaCru = buscarValor(linha,'Prazo Entrega')||buscarValor(linha,'Data Prev. Entrega');
+                // Para a aba ROLOS, "Data Final" é o único campo usado para calcular atraso/
+                // próxima entrega (não usa Prazo Camisa nem Prazo Eixo).
+                const pzEntregaCru = buscarValor(linha,'Prazo Entrega')||buscarValor(linha,'Data Prev. Entrega')||buscarValor(linha,'Data Final');
                 const statusUsinagemCru = buscarValor(linha,'Status Usinagem')||buscarValor(linha,'Status Us.')||buscarValor(linha,'Status');
                 const observacaoCru = String(buscarValor(linha,'Observação')||buscarValor(linha,'Observacao')||buscarValor(linha,'Obs')).trim();
                 const statusUsinagem = normalizarTextoParaFiltro(statusUsinagemCru);
@@ -1497,6 +1514,19 @@
                 const acabam   = String(buscarValor(linha,'Acabam.')||buscarValor(linha,'Acabam Insp.')||buscarValor(linha,'Acab.')).trim();
                 const liberacao= String(buscarValor(linha,'Liberação')||buscarValor(linha,'Liber.')).trim();
                 const perfil   = String(buscarValor(linha,'Perfil')).trim();
+
+                // Campos específicos ROLOS
+                const bitola      = String(buscarValor(linha,'Bitola')||'').trim();
+                const tipoRolo    = String(buscarValor(linha,'Tipo')||'').trim();
+                const posicaoRolo = String(buscarValor(linha,'Posição')||buscarValor(linha,'Posicao')||'').trim();
+                const nrEixoRolo  = String(buscarValor(linha,'Nº Eixo')||'').trim();
+                const fundidoRolo = String(buscarValor(linha,'Fundido')||'').trim();
+                const prazoCamisaCru  = buscarValor(linha,'Prazo Camisa');
+                const statusCamisaRolo = String(buscarValor(linha,'Status Camisa')||'').trim();
+                const prazoEixoCru    = buscarValor(linha,'Prazo Eixo');
+                const statusEixoRolo  = String(buscarValor(linha,'Status Eixo')||'').trim();
+                const prazoCamisaInfo = formatarDataExcel(prazoCamisaCru);
+                const prazoEixoInfo   = formatarDataExcel(prazoEixoCru);
 
                 // Etapas de usinagem (colunas OP1..OP9): concluída = célula pintada de
                 // verde no Excel. Cada linha já vem pronta (array de {texto, concluida}) a partir
@@ -1554,6 +1584,11 @@
                         des,plainar,facear,serrar,soldadura,encaixe,furacao,acabam,liberacao,perfil,
                         recursoCamisa: recursoCamisaPendente,
                         etapasCamisa: etapasCamisa,
+                        // Campos Rolos
+                        bitola, tipoRolo, posicaoRolo, nrEixoRolo, fundidoRolo,
+                        statusCamisaRolo, statusEixoRolo,
+                        prazoCamisaStr: prazoCamisaInfo.stringLegivel, prazoCamisaObj: prazoCamisaInfo.dataObjeto,
+                        prazoEixoStr: prazoEixoInfo.stringLegivel, prazoEixoObj: prazoEixoInfo.dataObjeto,
                     },
                     filtros: { total:true,liberadas:isLiberada,processo:isProcesso,finalizadas:isFinalizada,expedidos:isExpedido,atrasos:isAtrasado,proximas:isProximaEntrega }
                 });
@@ -1642,6 +1677,25 @@
                     <td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td>
                     <td><input type="text" id="filtro-col-recurso-camisa" class="table-filter-input" placeholder="Buscar etapa..."></td>
                     <td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>`;
+            } else if (tipoProduto==="ROLOS") {
+                colspanRestante=13;
+                colunasHTML=`${thOrdenavel('Cliente','cliente')}${thOrdenavel('Descrição','descricao')}${thOrdenavel('Qtd.','qtd',true)}${thOrdenavel('Bitola','bitola',true)}${thOrdenavel('Tipo','tipoRolo',true)}${thOrdenavel('Posição','posicaoRolo',true)}${thOrdenavel('Nº Eixo','nrEixoRolo',true)}${thOrdenavel('Data Final','pzEntregaObj')}${thOrdenavel('Status','statusUsinagem')}${thOrdenavel('Fundido','fundidoRolo',true)}${thOrdenavel('Des.','des',true)}${thOrdenavel('Prazo Camisa','prazoCamisaObj')}${thOrdenavel('Status Camisa','statusCamisaRolo')}${thOrdenavel('Prazo Eixo','prazoEixoObj')}${thOrdenavel('Status Eixo','statusEixoRolo')}`;
+                colunasFiltroHTML=`
+                    <td><select id="filtro-col-cliente" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-desc" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-qtd" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-bitola" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-tipo-rolo" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-posicao-rolo" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-nr-eixo" class="table-filter-select"></select></td>
+                    <td><input type="text" id="filtro-col-pzentrega" class="table-filter-input" placeholder="ex: 01/2027"></td>
+                    <td><select id="filtro-col-status-geral" class="table-filter-select"></select></td>
+                    <td><select id="filtro-col-fundido" class="table-filter-select"></select></td>
+                    <td class="centralized-status"><select id="filtro-col-des" class="table-filter-select"></select></td>
+                    <td><input type="text" id="filtro-col-prazo-camisa" class="table-filter-input" placeholder="ex: 01/2027"></td>
+                    <td><select id="filtro-col-status-camisa" class="table-filter-select"></select></td>
+                    <td><input type="text" id="filtro-col-prazo-eixo" class="table-filter-input" placeholder="ex: 01/2027"></td>
+                    <td><select id="filtro-col-status-eixo" class="table-filter-select"></select></td>`;
             } else {
                 let adicionaisCol='', adicionaisFiltro='';
                 // Bagaceiras, Pentes e Rodetes Novos exibem OS/Peças e Seq. (colunas atuais da
@@ -1688,7 +1742,7 @@
                             <tbody id="tbody-dados-painel"></tbody>
                             <tfoot>
                                 <tr>
-                                    <td id="celula-texto-soma" colspan="${tipoProduto==="CARTEIRA GERAL"?4:(tipoProduto==="REFORMA DIVERSAS"?4:5)}" style="text-align:right;color:var(--text-2)">SOMA TOTAL DAS PEÇAS:</td>
+                                    <td id="celula-texto-soma" colspan="${tipoProduto==="CARTEIRA GERAL"?4:(tipoProduto==="REFORMA DIVERSAS"?4:(tipoProduto==="ROLOS"?2:5))}" style="text-align:right;color:var(--text-2)">SOMA TOTAL DAS PEÇAS:</td>
                                     <td id="celula-soma-total" style="text-align:center;color:var(--accent);font-size:1rem;font-weight:700">0</td>
                                     <td id="celula-espaco-tfoot" colspan="${colspanRestante}"></td>
                                 </tr>
@@ -1740,7 +1794,16 @@
             {id:'filtro-col-acabam',          fKey:'fAcabam',          chave:'acabam',               tipo:'exato'},
             {id:'filtro-col-status-geral',    fKey:'fStatusGeral',     chave:'statusUsinagem',       tipo:'exato'},
             {id:'filtro-col-liberacao',       fKey:'fLiberacao',       chave:'statusUsinagem',       tipo:'exato', abas:['PENTES','PERIFÉRICOS']},
-            {id:'filtro-col-recurso-camisa',  fKey:'fRecursoCamisa',   chave:'recursoCamisa',        tipo:'contem', abas:['BAGACEIRAS','RODETES NOVOS','PENTES','REFORMA DIVERSAS','CARTEIRA GERAL']}
+            {id:'filtro-col-recurso-camisa',  fKey:'fRecursoCamisa',   chave:'recursoCamisa',        tipo:'contem', abas:['BAGACEIRAS','RODETES NOVOS','PENTES','REFORMA DIVERSAS','CARTEIRA GERAL']},
+            {id:'filtro-col-bitola',          fKey:'fBitola',          chave:'bitola',               tipo:'exato', abas:['ROLOS']},
+            {id:'filtro-col-tipo-rolo',       fKey:'fTipoRolo',        chave:'tipoRolo',             tipo:'exato', abas:['ROLOS']},
+            {id:'filtro-col-posicao-rolo',    fKey:'fPosicaoRolo',     chave:'posicaoRolo',          tipo:'exato', abas:['ROLOS']},
+            {id:'filtro-col-nr-eixo',         fKey:'fNrEixoRolo',      chave:'nrEixoRolo',           tipo:'exato', abas:['ROLOS']},
+            {id:'filtro-col-fundido',         fKey:'fFundidoRolo',     chave:'fundidoRolo',          tipo:'exato', abas:['ROLOS']},
+            {id:'filtro-col-prazo-camisa',    fKey:'fPrazoCamisa',     chave:'prazoCamisaStr',       tipo:'contem', abas:['ROLOS']},
+            {id:'filtro-col-status-camisa',   fKey:'fStatusCamisaRolo',chave:'statusCamisaRolo',     tipo:'exato', abas:['ROLOS']},
+            {id:'filtro-col-prazo-eixo',      fKey:'fPrazoEixo',       chave:'prazoEixoStr',         tipo:'contem', abas:['ROLOS']},
+            {id:'filtro-col-status-eixo',     fKey:'fStatusEixoRolo',  chave:'statusEixoRolo',       tipo:'exato', abas:['ROLOS']}
         ];
 
         // Lê os valores atualmente selecionados/digitados em cada filtro de coluna.
@@ -1909,6 +1972,24 @@
                         <td class="centralized-status">${formatarStatusComIcone(vf.des)}</td>
                         <td style="font-size:0.75rem">${renderEtapasCamisa(vf.etapasCamisa)}</td>
                         <td>${statusBadge(vf.statusUsinagem)}</td>
+                        <td class="centralized-status">${obsHTML}</td>`;
+                } else if (nomeAbaAtiva==="ROLOS") {
+                    tr.innerHTML=`
+                        <td>${vf.cliente}</td>
+                        <td style="color:var(--text-2)">${vf.descricao}</td>
+                        <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
+                        <td style="text-align:center;color:var(--text-2)">${vf.bitola||'—'}</td>
+                        <td style="text-align:center;color:var(--text-2)">${vf.tipoRolo||'—'}</td>
+                        <td style="text-align:center;color:var(--text-2)">${vf.posicaoRolo||'—'}</td>
+                        <td style="text-align:center;color:var(--text-2)">${vf.nrEixoRolo||'—'}</td>
+                        <td>${alertaHTML}<span style="color:${vf.atrasadoVisual?'#ef4444':vf.proximaVisual?'#fbbf24':'var(--text-1)'}">${vf.pzEntregaStr||'—'}</span></td>
+                        <td>${statusBadge(vf.statusUsinagem)}</td>
+                        <td style="text-align:center;color:var(--text-2)">${vf.fundidoRolo||'—'}</td>
+                        <td class="centralized-status">${formatarStatusComIcone(vf.des)}</td>
+                        <td style="color:var(--text-2)">${vf.prazoCamisaStr||'—'}</td>
+                        <td>${statusBadge(vf.statusCamisaRolo||'—')}</td>
+                        <td style="color:var(--text-2)">${vf.prazoEixoStr||'—'}</td>
+                        <td>${statusBadge(vf.statusEixoRolo||'—')}</td>
                         <td class="centralized-status">${obsHTML}</td>`;
                 } else {
                     // Bagaceiras, Pentes e Rodetes Novos usam a apresentação de andamento em
