@@ -2352,6 +2352,7 @@
             { tipo: 'RODETES NOVOS',     label: 'Rodetes Novos' },
             { tipo: 'PERIFÉRICOS',       label: 'Periféricos' },
             { tipo: 'REFORMA DIVERSAS',  label: 'Reforma Diversas' },
+            { tipo: 'ROLOS',             label: 'Rolos Moenda' },
         ];
 
         const RELATORIO_STATUS_OPCOES = [
@@ -2400,7 +2401,10 @@
                     const recursosTexto = etapas.map(e => e.texto).join(' / ');
 
                     const statusCru    = buscarValor(linha,'Status Usinagem')||buscarValor(linha,'Status Us.')||buscarValor(linha,'Status');
-                    const pzEntregaCru = buscarValor(linha,'Prazo Entrega')||buscarValor(linha,'Data Prev. Entrega');
+                    // Para a categoria Rolos Moenda, "Data Final" é o único campo de prazo
+                    // (não existe Prazo Entrega/Data Prev. Entrega na aba ROLOS) — mesmo critério
+                    // já usado na tela própria da aba Rolos.
+                    const pzEntregaCru = buscarValor(linha,'Prazo Entrega')||buscarValor(linha,'Data Prev. Entrega')||buscarValor(linha,'Data Final');
                     const statusTxt  = String(statusCru||'').trim();
                     const statusNorm = normalizarTextoParaFiltro(statusTxt);
 
