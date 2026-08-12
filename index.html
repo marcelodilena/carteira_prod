@@ -540,6 +540,16 @@
         .centralized-status { text-align: center; vertical-align: middle; }
         .centralized-status div { display: inline-block; }
 
+        .status-badge-btn {
+            background: none; border: none; padding: 0; margin: 0;
+            cursor: pointer; font: inherit; line-height: 1;
+        }
+        .status-badge-btn .badge-status-usinagem { transition: box-shadow 0.15s, filter 0.15s; }
+        .status-badge-btn:hover .badge-status-usinagem {
+            filter: brightness(0.94);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
         
         .recurso-camisa s,
         .recurso-camisa strike {
@@ -914,6 +924,34 @@
         </div>
     </div>
 
+    <!-- MODAL DETALHE CAMISA (ROLOS) -->
+    <div id="modal-camisa-rolo" class="modal-overlay" onclick="fecharModalCamisaRolo(event)">
+        <div class="modal-box" style="max-width:900px;width:95%">
+            <div class="modal-header">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
+                Andamento da Camisa
+            </div>
+            <div id="modal-camisa-rolo-conteudo" class="modal-body" style="padding:0;white-space:normal">Carregando...</div>
+            <div class="modal-footer">
+                <button class="btn-modal-close" onclick="document.getElementById('modal-camisa-rolo').classList.remove('active')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DETALHE EIXO (ROLOS) -->
+    <div id="modal-eixo-rolo" class="modal-overlay" onclick="fecharModalEixoRolo(event)">
+        <div class="modal-box" style="max-width:900px;width:95%">
+            <div class="modal-header">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+                Andamento do Eixo
+            </div>
+            <div id="modal-eixo-rolo-conteudo" class="modal-body" style="padding:0;white-space:normal">Carregando...</div>
+            <div class="modal-footer">
+                <button class="btn-modal-close" onclick="document.getElementById('modal-eixo-rolo').classList.remove('active')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- DRAWER MOBILE -->
     <div id="mobile-drawer" class="mobile-drawer" onclick="fecharDrawerSeFora(event)">
         <div class="drawer-backdrop"></div>
@@ -1092,6 +1130,14 @@
         let pentesEtapasOPPorIndice = [];
         let rodetesNovosEtapasOPPorIndice = [];
         let bagaceirasEtapasOPPorIndice = [];
+        // Aba ROLOS: dois blocos separados de colunas OP (etapas da Camisa e etapas do Eixo
+        // embutidas na mesma linha do rolo), extraídos por faixa de coluna — ver
+        // extrairEtapasColunasOPRolos.
+        let rolosCamisaEtapasOPPorIndice = [];
+        let rolosEixoEtapasOPPorIndice = [];
+        // Guarda, por índice de linha renderizada da tabela Rolos, os dados completos usados
+        // para montar o modal de detalhe ao clicar no badge de Status Camisa / Status Eixo.
+        let rolosLinhaDadosCamisa = [];
         // Engenharia · Programação: lista de itens com "Des." = AG/AG. (aguardando desenho),
         // reunidos a partir de todas as tabelas de Açúcar e Álcool.
         let programacaoListaOriginal = [];
@@ -1162,6 +1208,21 @@
                     }
                     if (chaveAba === normalizarTextoParaFiltro("BAGACEIRAS")) {
                         bagaceirasEtapasOPPorIndice = extrairEtapasColunasOP(workbook.Sheets[name]);
+                    }
+                    if (chaveAba === normalizarTextoParaFiltro("ROLOS")) {
+                        const sheetRolos = workbook.Sheets[name];
+                        const rangeRolos = XLSX.utils.decode_range(sheetRolos['!ref']);
+                        const linhaCabecalhoRolos = rangeRolos.s.r + 1;
+                        // Bloco de etapas da Camisa: entre a coluna "Des." (camisa) e "Prazo Camisa".
+                        const colDesCamisa = localizarColunaPorNome(sheetRolos, linhaCabecalhoRolos, 'Des.');
+                        const colPrazoCamisa = localizarColunaPorNome(sheetRolos, linhaCabecalhoRolos, 'Prazo Camisa');
+                        rolosCamisaEtapasOPPorIndice = (colDesCamisa > -1 && colPrazoCamisa > -1)
+                            ? extrairEtapasColunasOPRolos(sheetRolos, colDesCamisa + 1, colPrazoCamisa - 1) : [];
+                        // Bloco de etapas do Eixo: entre "Descrição Eixo" e "Prazo Eixo".
+                        const colDescricaoEixo = localizarColunaPorNome(sheetRolos, linhaCabecalhoRolos, 'Descrição Eixo');
+                        const colPrazoEixo = localizarColunaPorNome(sheetRolos, linhaCabecalhoRolos, 'Prazo Eixo');
+                        rolosEixoEtapasOPPorIndice = (colDescricaoEixo > -1 && colPrazoEixo > -1)
+                            ? extrairEtapasColunasOPRolos(sheetRolos, colDescricaoEixo + 1, colPrazoEixo - 1) : [];
                     }
                 });
 
@@ -1362,6 +1423,55 @@
             return out;
         }
 
+        // Localiza o índice (1-baseado) de uma coluna pelo texto do cabeçalho, numa linha
+        // específica da planilha. Usado para achar dinamicamente os limites dos blocos de
+        // colunas OP da Camisa/Eixo dentro da aba ROLOS, sem depender de posições fixas
+        // (a aba já mudou de estrutura mais de uma vez com a inclusão de novas colunas).
+        function localizarColunaPorNome(sheet, linhaCabecalho, nomeColuna) {
+            if (!sheet || !sheet['!ref']) return -1;
+            const range = XLSX.utils.decode_range(sheet['!ref']);
+            const termo = nomeColuna.replace(/[\s\.\n\r\/\-]/g,'').toUpperCase();
+            for (let c = range.s.c; c <= range.e.c; c++) {
+                const cell = sheet[XLSX.utils.encode_cell({ r: linhaCabecalho, c })];
+                if (!cell) continue;
+                const txtCab = String(cell.v||'').replace(/[\s\.\n\r\/\-]/g,'').toUpperCase();
+                if (txtCab === termo) return c + 1;
+            }
+            return -1;
+        }
+
+        // Variante de extrairEtapasColunasOP para a aba ROLOS: o cabeçalho real fica na 2ª
+        // linha da planilha (a 1ª linha só tem os rótulos de grupo "ROLOS"/"CAMISA"/"EIXOS"),
+        // e existem DOIS blocos de colunas "OP1..OPn" na mesma aba (etapas da Camisa e etapas
+        // do Eixo) — por isso a varredura é restrita à faixa de colunas informada
+        // (colInicio1based..colFim1based, 1-baseado) para não misturar os dois blocos.
+        function extrairEtapasColunasOPRolos(sheet, colInicio1based, colFim1based) {
+            if (!sheet || !sheet['!ref'] || !window.XLSX) return [];
+            const range = XLSX.utils.decode_range(sheet['!ref']);
+            const linhaCabecalho = range.s.r + 1;
+            const colIni = colInicio1based - 1, colFim = colFim1based - 1;
+            const colunasOP = [];
+            for (let c = colIni; c <= colFim; c++) {
+                const cell = sheet[XLSX.utils.encode_cell({ r: linhaCabecalho, c })];
+                if (!cell) continue;
+                const txtCab = String(cell.v||'').replace(/[\s\.\n\r\/\-]/g,'').toUpperCase();
+                if (/^OP\d+$/.test(txtCab)) colunasOP.push(c);
+            }
+            const out = [];
+            if (!colunasOP.length) return out;
+            for (let r = linhaCabecalho + 1; r <= range.e.r; r++) {
+                const etapas = [];
+                colunasOP.forEach(c => {
+                    const cell = sheet[XLSX.utils.encode_cell({ r, c })];
+                    const texto = cell && cell.v !== undefined && cell.v !== null ? String(cell.v).trim() : '';
+                    if (!texto) return;
+                    etapas.push({ texto, concluida: celulaEstaVerde(cell), emAndamento: celulaEstaAmarela(cell) });
+                });
+                out.push(etapas);
+            }
+            return out;
+        }
+
         // Mostra a coluna "Recursos" igual ao Excel: cada etapa concluída aparece riscada
         // (tag <s>, já estilizada via CSS .recurso-camisa s), a etapa em andamento (célula
         // pintada de amarelo/AND no Excel) aparece destacada em amarelo, e as demais em texto
@@ -1537,6 +1647,16 @@
                 const nrEixoRolo  = String(buscarValor(linha,'Nº Eixo')||'').trim();
                 const statusCamisaRolo = String(buscarValor(linha,'Status Camisa')||'').trim();
                 const statusEixoRolo  = String(buscarValor(linha,'Status Eixo')||'').trim();
+                // Detalhe da Camisa/Eixo embutidos na linha do Rolo (usados no modal aberto ao
+                // clicar no badge de Status Camisa / Status Eixo).
+                const descricaoCamisaRolo = String(buscarValor(linha,'Descrição Camisa')||'').trim();
+                const fundidoCamisaRolo   = String(buscarValor(linha,'Fundido')||'').trim();
+                const desCamisaRolo       = String(buscarValor(linha,'Des.')||'').trim();
+                const prazoCamisaInfo     = formatarDataExcel(buscarValor(linha,'Prazo Camisa'));
+                const etapasCamisaRolo    = rolosCamisaEtapasOPPorIndice[idxLinha] || [];
+                const descricaoEixoRolo   = String(buscarValor(linha,'Descrição Eixo')||'').trim();
+                const prazoEixoInfo       = formatarDataExcel(buscarValor(linha,'Prazo Eixo'));
+                const etapasEixoRolo      = rolosEixoEtapasOPPorIndice[idxLinha] || [];
 
                 // Etapas de usinagem (colunas OP1..OP9): concluída = célula pintada de
                 // verde no Excel. Cada linha já vem pronta (array de {texto, concluida}) a partir
@@ -1597,6 +1717,12 @@
                         // Campos Rolos
                         bitola, tipoRolo, posicaoRolo, nrEixoRolo,
                         statusCamisaRolo, statusEixoRolo,
+                        descricaoCamisaRolo, fundidoCamisaRolo, desCamisaRolo,
+                        prazoCamisaStr: prazoCamisaInfo.stringLegivel,
+                        etapasCamisaRolo,
+                        descricaoEixoRolo,
+                        prazoEixoStr: prazoEixoInfo.stringLegivel,
+                        etapasEixoRolo,
                     },
                     filtros: { total:true,liberadas:isLiberada,processo:isProcesso,finalizadas:isFinalizada,expedidos:isExpedido,atrasos:isAtrasado,proximas:isProximaEntrega }
                 });
@@ -1926,6 +2052,7 @@
                 return;
             }
 
+            if (nomeAbaAtiva==="ROLOS") rolosLinhaDadosCamisa = [];
             linhas.forEach(item => {
                 const vf = item.valoresFormatados;
                 let alertaHTML = vf.atrasadoVisual
@@ -1975,6 +2102,8 @@
                         <td>${statusBadge(vf.statusUsinagem)}</td>
                         <td class="centralized-status">${obsHTML}</td>`;
                 } else if (nomeAbaAtiva==="ROLOS") {
+                    const idxModalCamisa = rolosLinhaDadosCamisa.length;
+                    rolosLinhaDadosCamisa.push(vf);
                     tr.innerHTML=`
                         <td>${vf.cliente}</td>
                         <td style="color:var(--text-2)">${vf.descricao}</td>
@@ -1985,8 +2114,8 @@
                         <td style="text-align:center;color:var(--text-2)">${vf.nrEixoRolo||'—'}</td>
                         <td>${alertaHTML}<span style="color:${vf.atrasadoVisual?'#ef4444':vf.proximaVisual?'#fbbf24':'var(--text-1)'}">${vf.pzEntregaStr||'—'}</span></td>
                         <td>${statusBadgeColorido(vf.statusUsinagem)}</td>
-                        <td>${statusBadgeColorido(vf.statusCamisaRolo)}</td>
-                        <td>${statusBadgeColorido(vf.statusEixoRolo)}</td>
+                        <td><button class="status-badge-btn" onclick="abrirModalDetalheCamisaRolo(${idxModalCamisa})" title="Ver detalhes da camisa">${statusBadgeColorido(vf.statusCamisaRolo)}</button></td>
+                        <td><button class="status-badge-btn" onclick="abrirModalDetalheEixoRolo(${idxModalCamisa})" title="Ver detalhes do eixo">${statusBadgeColorido(vf.statusEixoRolo)}</button></td>
                         <td class="centralized-status">${obsHTML}</td>`;
                 } else {
                     // Bagaceiras, Pentes e Rodetes Novos usam a apresentação de andamento em
@@ -2039,7 +2168,98 @@
             if (evento.target.id==='modal-observacao') document.getElementById('modal-observacao').classList.remove('active');
         }
 
-        
+        // Modal "Andamento da Camisa": aberto ao clicar no badge de Status Camisa de uma
+        // linha da tabela Rolos. Mostra os dados da camisa daquele rolo (colunas embutidas
+        // na própria aba ROLOS) numa mini tabela, no mesmo formato usado nas outras abas.
+        function abrirModalDetalheCamisaRolo(idx) {
+            const vf = rolosLinhaDadosCamisa[idx];
+            const conteudoEl = document.getElementById('modal-camisa-rolo-conteudo');
+            if (!vf) {
+                conteudoEl.innerHTML = `<div style="padding:1.2rem;text-align:center;color:var(--text-3)">Dados não encontrados.</div>`;
+                document.getElementById('modal-camisa-rolo').classList.add('active');
+                return;
+            }
+            conteudoEl.innerHTML = `
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th><th>Descrição Camisa</th><th style="text-align:center">Qtd</th>
+                                <th style="text-align:center">Bitola</th><th style="text-align:center">Tipo</th>
+                                <th style="text-align:center">Posição</th><th style="text-align:center">Nº Eixo</th>
+                                <th style="text-align:center">Fundido</th><th style="text-align:center">Des.</th>
+                                <th>Recursos</th><th>Prazo Camisa</th><th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${escaparHTML(vf.cliente)||'—'}</td>
+                                <td style="color:var(--text-2)">${escaparHTML(vf.descricaoCamisaRolo)||'—'}</td>
+                                <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
+                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.bitola)||'—'}</td>
+                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.tipoRolo)||'—'}</td>
+                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.posicaoRolo)||'—'}</td>
+                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.nrEixoRolo)||'—'}</td>
+                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.fundidoCamisaRolo)||'—'}</td>
+                                <td class="centralized-status">${formatarStatusComIcone(vf.desCamisaRolo)}</td>
+                                <td style="font-size:0.75rem">${renderEtapasCamisa(vf.etapasCamisaRolo)}</td>
+                                <td style="color:var(--text-2)">${vf.prazoCamisaStr||'—'}</td>
+                                <td>${statusBadgeColorido(vf.statusCamisaRolo)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>`;
+            document.getElementById('modal-camisa-rolo').classList.add('active');
+        }
+        function fecharModalCamisaRolo(evento) {
+            if (evento.target.id==='modal-camisa-rolo') document.getElementById('modal-camisa-rolo').classList.remove('active');
+        }
+
+        // Modal "Andamento do Eixo": aberto ao clicar no badge de Status Eixo de uma
+        // linha da tabela Rolos. Mostra os dados do eixo daquele rolo (colunas embutidas
+        // na própria aba ROLOS) numa mini tabela, no mesmo formato usado no modal da Camisa.
+        function abrirModalDetalheEixoRolo(idx) {
+            const vf = rolosLinhaDadosCamisa[idx];
+            const conteudoEl = document.getElementById('modal-eixo-rolo-conteudo');
+            if (!vf) {
+                conteudoEl.innerHTML = `<div style="padding:1.2rem;text-align:center;color:var(--text-3)">Dados não encontrados.</div>`;
+                document.getElementById('modal-eixo-rolo').classList.add('active');
+                return;
+            }
+            conteudoEl.innerHTML = `
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th><th>Descrição Eixo</th><th style="text-align:center">Qtd</th>
+                                <th style="text-align:center">Bitola</th><th style="text-align:center">Tipo</th>
+                                <th style="text-align:center">Posição</th><th style="text-align:center">Nº Eixo</th>
+                                <th>Recursos</th><th>Prazo Eixo</th><th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${escaparHTML(vf.cliente)||'—'}</td>
+                                <td style="color:var(--text-2)">${escaparHTML(vf.descricaoEixoRolo)||'—'}</td>
+                                <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
+                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.bitola)||'—'}</td>
+                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.tipoRolo)||'—'}</td>
+                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.posicaoRolo)||'—'}</td>
+                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.nrEixoRolo)||'—'}</td>
+                                <td style="font-size:0.75rem">${renderEtapasCamisa(vf.etapasEixoRolo)}</td>
+                                <td style="color:var(--text-2)">${vf.prazoEixoStr||'—'}</td>
+                                <td>${statusBadgeColorido(vf.statusEixoRolo)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>`;
+            document.getElementById('modal-eixo-rolo').classList.add('active');
+        }
+        function fecharModalEixoRolo(evento) {
+            if (evento.target.id==='modal-eixo-rolo') document.getElementById('modal-eixo-rolo').classList.remove('active');
+        }
+
+
         function atualizarCardsFiltrados(lista) {
             const totais = {total: lista.length, liberadas:0, processo:0, finalizadas:0, expedidos:0, atrasos:0, proximas:0};
             lista.forEach(item => {
