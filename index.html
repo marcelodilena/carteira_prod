@@ -924,33 +924,6 @@
         </div>
     </div>
 
-    <!-- MODAL DETALHE CAMISA (ROLOS) -->
-    <div id="modal-camisa-rolo" class="modal-overlay" onclick="fecharModalCamisaRolo(event)">
-        <div class="modal-box" style="max-width:900px;width:95%">
-            <div class="modal-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
-                Andamento da Camisa
-            </div>
-            <div id="modal-camisa-rolo-conteudo" class="modal-body" style="padding:0;white-space:normal">Carregando...</div>
-            <div class="modal-footer">
-                <button class="btn-modal-close" onclick="document.getElementById('modal-camisa-rolo').classList.remove('active')">Fechar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DETALHE EIXO (ROLOS) -->
-    <div id="modal-eixo-rolo" class="modal-overlay" onclick="fecharModalEixoRolo(event)">
-        <div class="modal-box" style="max-width:900px;width:95%">
-            <div class="modal-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
-                Andamento do Eixo
-            </div>
-            <div id="modal-eixo-rolo-conteudo" class="modal-body" style="padding:0;white-space:normal">Carregando...</div>
-            <div class="modal-footer">
-                <button class="btn-modal-close" onclick="document.getElementById('modal-eixo-rolo').classList.remove('active')">Fechar</button>
-            </div>
-        </div>
-    </div>
 
     <!-- DRAWER MOBILE -->
     <div id="mobile-drawer" class="mobile-drawer" onclick="fecharDrawerSeFora(event)">
@@ -2168,95 +2141,137 @@
             if (evento.target.id==='modal-observacao') document.getElementById('modal-observacao').classList.remove('active');
         }
 
-        // Modal "Andamento da Camisa": aberto ao clicar no badge de Status Camisa de uma
+        // Monta um documento HTML autônomo (CSS embutido, sem dependências do app) com uma
+        // única tabela de detalhe, e abre numa nova aba do navegador via Blob URL. Usado tanto
+        // pelo detalhe de Camisa quanto pelo de Eixo (ver funções logo abaixo).
+        function abrirNovaAbaDetalheRolo(titulo, theadHTML, linhaHTML) {
+            const doc = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>${escaparHTML(titulo)} · Carteira Produção</title>
+<style>
+    :root {
+        --bg: #eef1f5; --surface-1:#ffffff; --surface-2:#f7f8fa; --surface-3:#eef0f4;
+        --border:#e2e5eb; --border-light:#d5d9e1; --accent:#e97332;
+        --accent-dim: rgba(233,115,50,0.10); --accent-glow: rgba(233,115,50,0.20);
+        --text-1:#1f2430; --text-2:#5b6472; --text-3:#98a1af;
+        --row-border: rgba(15,23,42,0.08); --row-border-light: rgba(15,23,42,0.05);
+        --row-stripe: rgba(15,23,42,0.025); --row-hover: rgba(250,204,21,0.28);
+    }
+    * { box-sizing:border-box; }
+    body {
+        margin:0; padding:1.5rem; font-family:'Segoe UI',Roboto,Arial,sans-serif;
+        background:var(--bg); color:var(--text-1);
+    }
+    h1 {
+        font-size:1.05rem; font-weight:700; margin:0 0 1rem;
+        display:flex; align-items:center; gap:0.5rem;
+    }
+    h1 span { color:var(--accent); }
+    .table-wrapper {
+        background:var(--surface-1); border:1px solid var(--border);
+        border-radius:10px; overflow:auto; box-shadow:0 1px 3px rgba(15,23,42,0.06);
+    }
+    .data-table { width:100%; border-collapse:collapse; text-align:left; }
+    .data-table thead th {
+        background:var(--surface-2); color:var(--text-3); padding:0.6rem 0.85rem;
+        font-weight:700; border-bottom:1px solid var(--border); text-transform:uppercase;
+        font-size:0.68rem; letter-spacing:0.4px; white-space:nowrap; border-right:1px solid var(--border);
+    }
+    .data-table thead th:last-child { border-right:none; }
+    .data-table td {
+        padding:0.6rem 0.85rem; border-bottom:1px solid var(--row-border); color:var(--text-1);
+        font-size:0.8rem; border-right:1px solid var(--row-border-light); white-space:normal; word-break:break-word;
+    }
+    .data-table td:last-child { border-right:none; }
+    .data-table tr:hover td { background:var(--row-hover); }
+    .centralized-status { text-align:center; vertical-align:middle; }
+    .centralized-status div { display:inline-block; }
+    .badge-etapa {
+        display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.68rem;
+        font-weight:600; text-align:center; min-width:50px; user-select:none; letter-spacing:0.3px;
+    }
+    .badge-etapa.ok    { background:rgba(16,185,129,0.12); color:#047857; border:1px solid rgba(16,185,129,0.3); }
+    .badge-etapa.andam { background:rgba(245,158,11,0.12); color:#b45309; border:1px solid rgba(245,158,11,0.3); }
+    .badge-etapa.ag     { background:var(--surface-3); color:var(--text-3); border:1px solid var(--border); }
+    .badge-etapa.vazio  { background:transparent; color:var(--text-3); border:none; font-weight:400; }
+    .badge-status-usinagem {
+        display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.68rem; font-weight:600;
+        background:rgba(37,99,235,0.10); color:#1d4ed8; border:1px solid rgba(37,99,235,0.25); white-space:nowrap;
+    }
+    .recurso-camisa s, .recurso-camisa strike { color:var(--text-3); opacity:0.6; }
+    .recurso-camisa { line-height:1.5; }
+    .recurso-camisa-contador { display:block; font-size:0.62rem; color:var(--text-3); margin-top:2px; }
+    .etapa-andamento { background:rgba(245,158,11,0.15); color:#b45309; font-weight:600; padding:1px 4px; border-radius:3px; }
+</style>
+</head>
+<body>
+    <h1>${escaparHTML(titulo)}</h1>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead><tr>${theadHTML}</tr></thead>
+            <tbody><tr>${linhaHTML}</tr></tbody>
+        </table>
+    </div>
+</body>
+</html>`;
+            const blob = new Blob([doc], {type:'text/html'});
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        }
+
+        // Nova aba "Andamento da Camisa": aberta ao clicar no badge de Status Camisa de uma
         // linha da tabela Rolos. Mostra os dados da camisa daquele rolo (colunas embutidas
         // na própria aba ROLOS) numa mini tabela, no mesmo formato usado nas outras abas.
         function abrirModalDetalheCamisaRolo(idx) {
             const vf = rolosLinhaDadosCamisa[idx];
-            const conteudoEl = document.getElementById('modal-camisa-rolo-conteudo');
-            if (!vf) {
-                conteudoEl.innerHTML = `<div style="padding:1.2rem;text-align:center;color:var(--text-3)">Dados não encontrados.</div>`;
-                document.getElementById('modal-camisa-rolo').classList.add('active');
-                return;
-            }
-            conteudoEl.innerHTML = `
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Cliente</th><th>Descrição Camisa</th><th style="text-align:center">Qtd</th>
-                                <th style="text-align:center">Bitola</th><th style="text-align:center">Tipo</th>
-                                <th style="text-align:center">Posição</th><th style="text-align:center">Nº Eixo</th>
-                                <th style="text-align:center">Fundido</th><th style="text-align:center">Des.</th>
-                                <th>Recursos</th><th>Prazo Camisa</th><th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>${escaparHTML(vf.cliente)||'—'}</td>
-                                <td style="color:var(--text-2)">${escaparHTML(vf.descricaoCamisaRolo)||'—'}</td>
-                                <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
-                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.bitola)||'—'}</td>
-                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.tipoRolo)||'—'}</td>
-                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.posicaoRolo)||'—'}</td>
-                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.nrEixoRolo)||'—'}</td>
-                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.fundidoCamisaRolo)||'—'}</td>
-                                <td class="centralized-status">${formatarStatusComIcone(vf.desCamisaRolo)}</td>
-                                <td style="font-size:0.75rem">${renderEtapasCamisa(vf.etapasCamisaRolo)}</td>
-                                <td style="color:var(--text-2)">${vf.prazoCamisaStr||'—'}</td>
-                                <td>${statusBadgeColorido(vf.statusCamisaRolo)}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>`;
-            document.getElementById('modal-camisa-rolo').classList.add('active');
-        }
-        function fecharModalCamisaRolo(evento) {
-            if (evento.target.id==='modal-camisa-rolo') document.getElementById('modal-camisa-rolo').classList.remove('active');
+            if (!vf) return;
+            const thead = `
+                <th>Cliente</th><th>Descrição Camisa</th><th style="text-align:center">Qtd</th>
+                <th style="text-align:center">Bitola</th><th style="text-align:center">Tipo</th>
+                <th style="text-align:center">Posição</th><th style="text-align:center">Nº Eixo</th>
+                <th style="text-align:center">Fundido</th><th style="text-align:center">Des.</th>
+                <th>Recursos</th><th>Prazo Camisa</th><th>Status</th>`;
+            const linha = `
+                <td>${escaparHTML(vf.cliente)||'—'}</td>
+                <td style="color:var(--text-2)">${escaparHTML(vf.descricaoCamisaRolo)||'—'}</td>
+                <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
+                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.bitola)||'—'}</td>
+                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.tipoRolo)||'—'}</td>
+                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.posicaoRolo)||'—'}</td>
+                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.nrEixoRolo)||'—'}</td>
+                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.fundidoCamisaRolo)||'—'}</td>
+                <td class="centralized-status">${formatarStatusComIcone(vf.desCamisaRolo)}</td>
+                <td style="font-size:0.75rem">${renderEtapasCamisa(vf.etapasCamisaRolo)}</td>
+                <td style="color:var(--text-2)">${vf.prazoCamisaStr||'—'}</td>
+                <td>${statusBadgeColorido(vf.statusCamisaRolo)}</td>`;
+            abrirNovaAbaDetalheRolo('Andamento da Camisa', thead, linha);
         }
 
-        // Modal "Andamento do Eixo": aberto ao clicar no badge de Status Eixo de uma
+        // Nova aba "Andamento do Eixo": aberta ao clicar no badge de Status Eixo de uma
         // linha da tabela Rolos. Mostra os dados do eixo daquele rolo (colunas embutidas
-        // na própria aba ROLOS) numa mini tabela, no mesmo formato usado no modal da Camisa.
+        // na própria aba ROLOS) numa mini tabela, no mesmo formato usado na aba da Camisa.
         function abrirModalDetalheEixoRolo(idx) {
             const vf = rolosLinhaDadosCamisa[idx];
-            const conteudoEl = document.getElementById('modal-eixo-rolo-conteudo');
-            if (!vf) {
-                conteudoEl.innerHTML = `<div style="padding:1.2rem;text-align:center;color:var(--text-3)">Dados não encontrados.</div>`;
-                document.getElementById('modal-eixo-rolo').classList.add('active');
-                return;
-            }
-            conteudoEl.innerHTML = `
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Cliente</th><th>Descrição Eixo</th><th style="text-align:center">Qtd</th>
-                                <th style="text-align:center">Bitola</th><th style="text-align:center">Tipo</th>
-                                <th style="text-align:center">Posição</th><th style="text-align:center">Nº Eixo</th>
-                                <th>Recursos</th><th>Prazo Eixo</th><th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>${escaparHTML(vf.cliente)||'—'}</td>
-                                <td style="color:var(--text-2)">${escaparHTML(vf.descricaoEixoRolo)||'—'}</td>
-                                <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
-                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.bitola)||'—'}</td>
-                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.tipoRolo)||'—'}</td>
-                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.posicaoRolo)||'—'}</td>
-                                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.nrEixoRolo)||'—'}</td>
-                                <td style="font-size:0.75rem">${renderEtapasCamisa(vf.etapasEixoRolo)}</td>
-                                <td style="color:var(--text-2)">${vf.prazoEixoStr||'—'}</td>
-                                <td>${statusBadgeColorido(vf.statusEixoRolo)}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>`;
-            document.getElementById('modal-eixo-rolo').classList.add('active');
-        }
-        function fecharModalEixoRolo(evento) {
-            if (evento.target.id==='modal-eixo-rolo') document.getElementById('modal-eixo-rolo').classList.remove('active');
+            if (!vf) return;
+            const thead = `
+                <th>Cliente</th><th>Descrição Eixo</th><th style="text-align:center">Qtd</th>
+                <th style="text-align:center">Bitola</th><th style="text-align:center">Tipo</th>
+                <th style="text-align:center">Posição</th><th style="text-align:center">Nº Eixo</th>
+                <th>Recursos</th><th>Prazo Eixo</th><th>Status</th>`;
+            const linha = `
+                <td>${escaparHTML(vf.cliente)||'—'}</td>
+                <td style="color:var(--text-2)">${escaparHTML(vf.descricaoEixoRolo)||'—'}</td>
+                <td style="text-align:center;font-weight:600;color:var(--accent)">${vf.qtd}</td>
+                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.bitola)||'—'}</td>
+                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.tipoRolo)||'—'}</td>
+                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.posicaoRolo)||'—'}</td>
+                <td style="text-align:center;color:var(--text-2)">${escaparHTML(vf.nrEixoRolo)||'—'}</td>
+                <td style="font-size:0.75rem">${renderEtapasCamisa(vf.etapasEixoRolo)}</td>
+                <td style="color:var(--text-2)">${vf.prazoEixoStr||'—'}</td>
+                <td>${statusBadgeColorido(vf.statusEixoRolo)}</td>`;
+            abrirNovaAbaDetalheRolo('Andamento do Eixo', thead, linha);
         }
 
 
